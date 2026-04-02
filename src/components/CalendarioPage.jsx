@@ -107,6 +107,21 @@ function GroupStandings({ standings }) {
   );
 }
 
+// ─── ¿El partido ya comenzó? (hora ET, mundial = EDT UTC-4) ─────────────────
+
+function matchHasStarted(match) {
+  try {
+    if (!match.fecha || !match.hora) return false;
+    // hora viene como "3:00 PM ET" → quitar sufijo ET
+    const timeStr = match.hora.replace(/\s*ET\s*$/i, "").trim();
+    const dt = new Date(`${match.fecha} ${timeStr} EDT`);
+    if (isNaN(dt.getTime())) return false;
+    return Date.now() >= dt.getTime();
+  } catch {
+    return false;
+  }
+}
+
 // ─── Cálculo de puntos por partido ───────────────────────────────────────────
 
 function calcPuntos(prediction, official) {
@@ -128,6 +143,10 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
   const bg       = isEven ? "white" : "#f9fafd";
   const hasPred  = prediction?.home != null && prediction?.away != null;
   const pts      = (officialResult && hasPred) ? calcPuntos(prediction, officialResult) : null;
+
+  // Bloqueo individual: si ya tiene resultado oficial O el partido ya comenzó
+  const isMatchLocked = readOnly || !!officialResult || matchHasStarted(match);
+
   return (
     <div style={{ borderBottom: "1px solid var(--ch-border)" }}>
     <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", gap: "6px", background: bg }}>
@@ -139,7 +158,7 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
           {match.local?.nombre}
         </span>
         <FlagImg nombre={match.local?.nombre} bandera={match.local?.bandera} size={18} />
-        {!finished && <GoalInput value={prediction?.home} onChange={(v) => onPredictionChange(match.id, { home: v, away: prediction?.away ?? null })} readOnly={readOnly} />}
+        {!finished && <GoalInput value={prediction?.home} onChange={(v) => onPredictionChange(match.id, { home: v, away: prediction?.away ?? null })} readOnly={isMatchLocked} />}
       </div>
       <div style={{ flexShrink: 0, width: "54px", textAlign: "center" }}>
         {finished && match.resultado ? (
@@ -154,7 +173,7 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
         )}
       </div>
       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "4px", justifyContent: "flex-start", minWidth: 0, overflow: "hidden" }}>
-        {!finished && <GoalInput value={prediction?.away} onChange={(v) => onPredictionChange(match.id, { home: prediction?.home ?? null, away: v })} readOnly={readOnly} />}
+        {!finished && <GoalInput value={prediction?.away} onChange={(v) => onPredictionChange(match.id, { home: prediction?.home ?? null, away: v })} readOnly={isMatchLocked} />}
         <FlagImg nombre={match.visitante?.nombre} bandera={match.visitante?.bandera} size={18} />
         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", fontWeight: "700", color: "var(--ch-navy)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {match.visitante?.nombre}
@@ -167,55 +186,41 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
     {/* ─── Fila de comparación resultado oficial ─── */}
     {officialResult && (
       <div style={{
-        display: "flex", alignItems: "center", gap: "8px",
-        padding: "4px 12px 8px", background: bg,
-        flexWrap: "wrap",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "4px 12px 8px", background: bg, gap: "8px",
       }}>
-        <span style={{
-          fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700",
-          fontSize: "10px", color: "#8097c0", textTransform: "uppercase",
-          letterSpacing: "0.5px",
-        }}>
-          Oficial:
-        </span>
-        <span style={{
-          fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
-          fontSize: "14px", color: "#003080",
-          background: "#e8f0ff", padding: "1px 9px", borderRadius: "5px",
-          letterSpacing: "0.5px",
-        }}>
-          {officialResult.goles_local} – {officialResult.goles_vis}
-        </span>
-
+        {/* Izquierda: marcador oficial */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700",
+            fontSize: "10px", color: "#8097c0", textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          }}>
+            Oficial:
+          </span>
+          <span style={{
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
+            fontSize: "14px", color: "#003080",
+            background: "#e8f0ff", padding: "1px 9px", borderRadius: "5px",
+            letterSpacing: "0.5px",
+          }}>
+            {officialResult.goles_local} – {officialResult.goles_vis}
+          </span>
+        </div>
+        {/* Derecha: badge de puntos */}
         {hasPred ? (
-          <>
-            <span style={{ color: "#c5d5f0", fontSize: "12px" }}>·</span>
-            <span style={{
-              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700",
-              fontSize: "10px", color: "#8097c0", textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}>
-              Tu pronóstico:
-            </span>
-            <span style={{
-              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
-              fontSize: "14px", color: "#003080", letterSpacing: "0.5px",
-            }}>
-              {prediction.home} – {prediction.away}
-            </span>
-            <span style={{
-              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
-              fontSize: "11px", letterSpacing: "0.3px", padding: "2px 10px",
-              borderRadius: "10px",
-              color:      pts === 3 ? "#1b7c2e" : pts === 1 ? "#005aba" : "#c0392b",
-              background: pts === 3 ? "#e6f4ea" : pts === 1 ? "#e3f0ff" : "#fdecea",
-            }}>
-              {pts === 3 ? "✅ Exacto +3 pts" : pts === 1 ? "✅ Resultado +1 pt" : "❌ 0 pts"}
-            </span>
-          </>
+          <span style={{
+            fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
+            fontSize: "11px", letterSpacing: "0.3px", padding: "2px 10px",
+            borderRadius: "10px", flexShrink: 0,
+            color:      pts === 3 ? "#1b7c2e" : pts === 1 ? "#005aba" : "#c0392b",
+            background: pts === 3 ? "#e6f4ea" : pts === 1 ? "#e3f0ff" : "#fdecea",
+          }}>
+            {pts === 3 ? "✅ +3 pts" : pts === 1 ? "✅ +1 pt" : "❌ 0 pts"}
+          </span>
         ) : (
           <span style={{ fontSize: "10px", color: "#b0bec5", fontStyle: "italic", fontFamily: "'Inter', sans-serif" }}>
-            Sin pronóstico registrado
+            Sin pronóstico
           </span>
         )}
       </div>
