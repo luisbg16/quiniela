@@ -77,6 +77,40 @@ export default function SimulacionPage({ groupsData }) {
   return (
     <div id="simulacion-root" style={{ maxWidth: "1440px", margin: "0 auto", padding: "24px 20px 48px" }}>
 
+      {/* ── Tarjeta disclaimer ── */}
+      <div style={{
+        background: "linear-gradient(135deg, #fff8e1, #fffde7)",
+        border: "1.5px solid #f5c200",
+        borderRadius: "12px",
+        padding: "14px 20px",
+        marginBottom: "20px",
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "12px",
+      }}>
+        <span style={{ fontSize: "22px", flexShrink: 0 }}>🎮</span>
+        <div>
+          <div style={{
+            fontFamily: "'Boldonse', cursive",
+            fontSize: "13px",
+            color: "#7a5200",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            marginBottom: "4px",
+          }}>
+            Modo Simulación — Solo para explorar
+          </div>
+          <div style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "12px",
+            color: "#5a4000",
+            lineHeight: 1.55,
+          }}>
+            Aquí podés predecir tu campeón del mundo de forma interactiva. <strong>Esta sección no forma parte de La Jugada Ganadora Chorotega</strong> y no afecta tu puntaje ni tu participación en el sorteo.
+          </div>
+        </div>
+      </div>
+
       {/* ── Encabezado + tab strip ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

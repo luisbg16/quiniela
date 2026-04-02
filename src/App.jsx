@@ -165,7 +165,7 @@ export default function App() {
             <div className="home-cta">
               <div>
                 <div style={{ fontFamily: "'Boldonse', cursive", fontSize: "20px", color: "#f5c200", textTransform: "uppercase" }}>
-                  ¡Participá en la Quiniela!
+                  ¡Participá en La Jugada Ganadora Chorotega!
                 </div>
                 <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.8)", fontFamily: "'Inter', sans-serif", marginTop: "6px" }}>
                   Predecí los marcadores de la Fase de Grupos y ganás puntos por cada acierto.

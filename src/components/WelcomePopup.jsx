@@ -40,7 +40,7 @@ export default function WelcomePopup({ onClose }) {
             fontFamily: "'Boldonse', cursive", fontSize: "20px",
             color: "#f5c200", margin: 0, textTransform: "uppercase", letterSpacing: "1px",
           }}>
-            ¡Bienvenido a la Quiniela!
+            ¡La Jugada Ganadora Chorotega!
           </h2>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", color: "rgba(255,255,255,0.75)", margin: "6px 0 0" }}>
             FIFA World Cup 2026 · Cooperativa Chorotega

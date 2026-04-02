@@ -37,7 +37,7 @@ export default function CondicionesPage({ onBack }) {
                 color: "rgba(255,255,255,0.55)", fontSize: "12px",
                 margin: "4px 0 0", fontFamily: "'Inter', sans-serif",
               }}>
-                Calendario Mundialista FIFA 2026™ · Cooperativa Chorotega
+                La Jugada Ganadora Chorotega · FIFA World Cup 2026™
               </p>
             </div>
           </div>
@@ -57,9 +57,9 @@ export default function CondicionesPage({ onBack }) {
         </div>
 
         <Section title="1. Participación">
-          Podrán participar todos los usuarios afiliados o no afiliados a la Cooperativa de Ahorro y Crédito
-          Chorotega, que se registren en el Calendario Mundialista virtual. La participación es personal e
-          intransferible; solo se permitirá un usuario por número de identidad.
+          Podrán participar todos los usuarios afiliados o no afiliados, incluyendo los colaboradores de la
+          Cooperativa de Ahorro y Crédito Chorotega, que se registren en La Jugada Ganadora Chorotega.
+          La participación es personal e intransferible; solo se permitirá un usuario por número de identidad.
         </Section>
 
         <Section title="2. Registro">
@@ -69,17 +69,19 @@ export default function CondicionesPage({ onBack }) {
         </Section>
 
         <Section title="3. Dinámica">
-          La promoción consiste en pronosticar los resultados de los partidos del Mundial 2026 mediante el
-          Calendario Mundialista digital. Cada partido se habilitará 24 horas antes de su inicio, y los
-          pronósticos se cerrarán 5 minutos antes del pitazo inicial. No se permitirán cambios de resultados
-          una vez cerrado el período de pronóstico de cada partido.
+          La promoción consiste en pronosticar los resultados de los partidos del Mundial 2026 mediante La
+          Jugada Ganadora Chorotega. Los pronósticos de la fase de grupos estarán habilitados desde el
+          7 de abril de 2026. Para los partidos de la fase eliminatoria, cada encuentro se habilitará
+          24 horas antes de su inicio. En todos los casos, los pronósticos se cerrarán 5 minutos antes
+          del pitazo inicial. No se permitirán cambios de resultados una vez cerrado el período de
+          pronóstico de cada partido.
         </Section>
 
         <Section title="4. Sistema de puntuación">
           Los puntos se asignarán de la siguiente manera por cada partido:
           <ul style={{ margin: "10px 0 0 16px", padding: 0, lineHeight: 2 }}>
             <li><strong>Acierto de resultado</strong> (ganador o empate): <strong>1 punto</strong></li>
-            <li><strong>Acierto de marcador exacto</strong>: <strong>3 puntos</strong></li>
+            <li><strong>Acierto de marcador exacto</strong>: <strong>+2 puntos adicionales</strong> (total 3 pts)</li>
             <li><strong>Sin acierto</strong>: 0 puntos</li>
           </ul>
         </Section>
@@ -89,33 +91,39 @@ export default function CondicionesPage({ onBack }) {
           siguientes:
           <ul style={{ margin: "10px 0 0 16px", padding: 0, lineHeight: 2 }}>
             <li>Ser afiliado activo de la Cooperativa Chorotega.</li>
-            <li>Haber completado al menos el <strong>80% de los pronósticos</strong> durante la vigencia del calendario.</li>
-            <li>Haber alcanzado el mínimo de <strong>83 puntos</strong> acumulados.</li>
+            <li>Haber completado al menos el <strong>80% de los pronósticos</strong> durante la vigencia del concurso.</li>
+            <li>Haber alcanzado el mínimo de <strong>60 puntos</strong> acumulados.</li>
           </ul>
         </Section>
 
         <Section title="6. Afiliación">
           Los participantes no afiliados que deseen optar al sorteo deberán formalizar su afiliación a la
-          Cooperativa durante el período de vigencia de la promoción. La condición de afiliado debe estar
-          activa al momento del cierre del concurso para ser considerado elegible.
+          Cooperativa durante el período de vigencia de la promoción (7 de abril al 19 de julio de 2026).
+          La condición de afiliado debe estar activa al momento del cierre del concurso para ser
+          considerado elegible.
         </Section>
 
         <Section title="7. Selección del ganador">
-          Se identificarán los participantes con mayor puntaje acumulado que cumplan los requisitos de
-          elegibilidad. Entre ellos se realizará un sorteo aleatorio para elegir al ganador o ganadores del
-          premio. La decisión del sorteo es definitiva e inapelable.
+          Se seleccionarán los participantes que acumulen el mínimo de 60 puntos y cumplan los requisitos
+          de elegibilidad. Entre ellos, con la base de datos, se realizará un sorteo aleatorio de forma
+          electrónica para elegir al ganador del premio. La decisión del sorteo es definitiva e inapelable.
         </Section>
 
         <Section title="8. Premios">
-          Se sortearán <strong>3 Smart TV de 70 pulgadas</strong> entre los participantes elegibles. Los
-          premios no son negociables ni canjeables por dinero en efectivo, y tampoco son transferibles a
-          terceras personas. La Cooperativa se reserva el derecho de modificar los premios según la
+          Se sortearán los siguientes premios entre los participantes elegibles:
+          <ul style={{ margin: "10px 0 0 16px", padding: 0, lineHeight: 2 }}>
+            <li><strong>1.er lugar:</strong> Sofá reclinable</li>
+            <li><strong>2.do lugar:</strong> Smart TV 70&quot; Samsung</li>
+            <li><strong>3.er lugar:</strong> Camiseta oficial y balón del Mundial 2026</li>
+          </ul>
+          Los premios no son negociables ni canjeables por dinero en efectivo y tampoco son transferibles
+          a terceras personas. La Cooperativa se reserva el derecho de modificar los premios según la
           cantidad de participantes registrados, comunicando cualquier cambio por canales oficiales.
         </Section>
 
         <Section title="9. Vigencia">
           La promoción será válida durante todo el período del Mundial 2026, desde el{" "}
-          <strong>lunes 25 de mayo</strong> hasta el <strong>lunes 19 de julio de 2026</strong>.
+          <strong>martes 7 de abril</strong> hasta el <strong>domingo 19 de julio de 2026</strong>.
           Las predicciones deberán registrarse dentro de este período.
         </Section>
 
@@ -158,7 +166,7 @@ export default function CondicionesPage({ onBack }) {
             <strong style={{ color: "var(--ch-navy)" }}>Cooperativa de Ahorro y Crédito Chorotega</strong>
           </p>
           <p style={{ margin: 0 }}>
-            Vigencia: 25 mayo – 19 julio 2026 · Sujeto a modificaciones sin previo aviso
+            Vigencia: 7 abril – 19 julio 2026 · Sujeto a modificaciones sin previo aviso
           </p>
         </div>
       </div>

@@ -64,7 +64,7 @@ export default function TablaPage() {
             Tabla de Posiciones
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#8097c0", fontFamily: "'Inter', sans-serif" }}>
-            Quiniela FIFA World Cup 2026 · Cooperativa Chorotega
+            La Jugada Ganadora Chorotega · FIFA World Cup 2026
           </p>
         </div>
       </div>

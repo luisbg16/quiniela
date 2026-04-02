@@ -308,7 +308,7 @@ function RegisterForm({ onSuccess, onSwitch }) {
           letterSpacing: "0.5px", transition: "background 0.15s",
         }}
       >
-        {loading ? "Creando cuenta..." : "Crear cuenta y guardar quiniela"}
+        {loading ? "Creando cuenta..." : "Crear cuenta y participar"}
       </button>
 
       <div style={{ textAlign: "center" }}>
@@ -393,8 +393,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </h2>
           <p style={{ fontSize: "12px", color: "var(--ch-text-muted)", margin: 0, fontFamily: "'Inter', sans-serif" }}>
             {tab === "login"
-              ? "Ingresá para guardar tu quiniela."
-              : "Creá tu cuenta para participar en el concurso."}
+              ? "Ingresá para guardar tus predicciones."
+              : "Creá tu cuenta para participar en La Jugada Ganadora Chorotega."}
           </p>
         </div>
 

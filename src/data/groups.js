@@ -15,7 +15,7 @@ export const GROUPS_DATA = {
       { nombre: "México",        bandera: "🇲🇽", logo: null },
       { nombre: "Corea del Sur", bandera: "🇰🇷", logo: null },
       { nombre: "Sudáfrica",     bandera: "🇿🇦", logo: null },
-      { nombre: "DEN/MKD/CZE/IRL",   bandera: "🏳️",  logo: null },
+      { nombre: "Chequia",             bandera: "🇨🇿",  logo: null },
     ],
   },
   B: {
@@ -24,7 +24,7 @@ export const GROUPS_DATA = {
       { nombre: "Canadá",      bandera: "🇨🇦", logo: null },
       { nombre: "Suiza",       bandera: "🇨🇭", logo: null },
       { nombre: "Qatar",       bandera: "🇶🇦", logo: null },
-      { nombre: "ITA/NIR/WAL/BIH", bandera: "🏳️",  logo: null },
+      { nombre: "Bosnia y Herzegovina", bandera: "🇧🇦", logo: null },
     ],
   },
   C: {
@@ -42,7 +42,7 @@ export const GROUPS_DATA = {
       { nombre: "USA",         bandera: "🇺🇸", logo: null },
       { nombre: "Paraguay",    bandera: "🇵🇾", logo: null },
       { nombre: "Australia",   bandera: "🇦🇺", logo: null },
-      { nombre: "TUR/ROU/SVK/KOS", bandera: "🏳️",  logo: null },
+      { nombre: "Türkiye",           bandera: "🇹🇷",  logo: null },
     ],
   },
   E: {
@@ -60,7 +60,7 @@ export const GROUPS_DATA = {
       { nombre: "Países Bajos", bandera: "🇳🇱", logo: null },
       { nombre: "Japón",        bandera: "🇯🇵", logo: null },
       { nombre: "Túnez",        bandera: "🇹🇳", logo: null },
-      { nombre: "UKR/SWE/POL/ALB",  bandera: "🏳️",  logo: null },
+      { nombre: "Suecia",             bandera: "🇸🇪",  logo: null },
     ],
   },
   G: {
@@ -87,7 +87,7 @@ export const GROUPS_DATA = {
       { nombre: "Francia",     bandera: "🇫🇷", logo: null },
       { nombre: "Senegal",     bandera: "🇸🇳", logo: null },
       { nombre: "Noruega",     bandera: "🇳🇴", logo: null },
-      { nombre: "BOL/SUR/IRQ", bandera: "🏳️",  logo: null },
+      { nombre: "Irak",         bandera: "🇮🇶",  logo: null },
     ],
   },
   J: {
@@ -105,7 +105,7 @@ export const GROUPS_DATA = {
       { nombre: "Colombia",    bandera: "🇨🇴", logo: null },
       { nombre: "Portugal",    bandera: "🇵🇹", logo: null },
       { nombre: "Uzbekistán",  bandera: "🇺🇿", logo: null },
-      { nombre: "NCL/JAM/CODr", bandera: "🏳️",  logo: null },
+      { nombre: "RD Congo",      bandera: "🇨🇩",  logo: null },
     ],
   },
   L: {

@@ -158,7 +158,7 @@ function SaveBar({ currentUser, savedOk, saveError, onSave, onLogin, onDismissSa
       <div style={{ position: "sticky", bottom: 0, zIndex: 50, background: "#e8f5e9", borderTop: "2px solid #a5d6a7", padding: "10px 28px", display: "flex", alignItems: "center", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: "14px" }}>✅</span>
         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#2e7d32", fontWeight: "700" }}>
-          ¡Quiniela guardada! Tus predicciones están registradas.
+          ¡Predicciones guardadas! Ya estás participando en La Jugada Ganadora Chorotega.
         </span>
         <button type="button" onClick={onModify} style={{ background: "#2e7d32", color: "white", border: "none", borderRadius: "7px", padding: "7px 18px", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700", fontSize: "12px", letterSpacing: "0.5px" }}>
           ✏️ Modificar predicción
@@ -170,7 +170,7 @@ function SaveBar({ currentUser, savedOk, saveError, onSave, onLogin, onDismissSa
     return (
       <div style={{ position: "sticky", bottom: 0, zIndex: 50, background: "#e8f5e9", borderTop: "2px solid #a5d6a7", padding: "10px 28px", display: "flex", alignItems: "center", gap: "12px", justifyContent: "center" }}>
         <span>✅</span>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#2e7d32", fontWeight: "700" }}>¡Quiniela guardada exitosamente!</span>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "#2e7d32", fontWeight: "700" }}>¡Predicciones guardadas exitosamente!</span>
         <button type="button" onClick={onDismissSaved} style={{ background: "none", border: "none", cursor: "pointer", color: "#2e7d32", fontSize: "12px", fontFamily: "'Inter', sans-serif", textDecoration: "underline" }}>OK</button>
       </div>
     );
@@ -179,12 +179,12 @@ function SaveBar({ currentUser, savedOk, saveError, onSave, onLogin, onDismissSa
     <div style={{ position: "sticky", bottom: 0, zIndex: 50, background: "var(--ch-navy)", borderTop: "3px solid var(--ch-yellow)", padding: "12px 28px", display: "flex", alignItems: "center", gap: "14px", justifyContent: "space-between" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "rgba(255,255,255,0.7)" }}>
-          {currentUser ? `Sesión: ${currentUser.nombre}` : "Ingresá para guardar tu quiniela"}
+          {currentUser ? `Sesión: ${currentUser.nombre}` : "Ingresá para guardar tus predicciones"}
         </span>
         {saveError && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#ffcdd2" }}>⚠️ {saveError}</span>}
       </div>
       <button type="button" onClick={currentUser ? onSave : onLogin} style={{ background: "var(--ch-yellow)", color: "var(--ch-navy)", border: "none", borderRadius: "8px", padding: "9px 22px", fontFamily: "'Boldonse', cursive", fontSize: "13px", cursor: "pointer", letterSpacing: "0.5px", flexShrink: 0 }}>
-        {currentUser ? "Guardar quiniela" : "Ingresar para guardar"}
+        {currentUser ? "Guardar predicciones" : "Ingresar para guardar"}
       </button>
     </div>
   );

@@ -14,6 +14,9 @@ export default function Footer() {
               <img src={logoNavBar} alt="Cooperativa Chorotega · Mundial 2026"
                 style={{ height: "40px", width: "auto", objectFit: "contain" }} />
             </div>
+            <div style={{ fontSize: "11px", fontWeight: "800", color: "rgba(245,194,0,0.85)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px", fontFamily: "'Barlow Condensed', sans-serif" }}>
+              La Jugada Ganadora Chorotega
+            </div>
             <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.48)", lineHeight: 1.6, maxWidth: "260px", margin: 0 }}>
               Predice los resultados del Mundial 2026 y compite por premios increíbles con tu cooperativa.
             </p>
