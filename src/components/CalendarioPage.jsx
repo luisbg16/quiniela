@@ -107,13 +107,30 @@ function GroupStandings({ standings }) {
   );
 }
 
+// ─── Cálculo de puntos por partido ───────────────────────────────────────────
+
+function calcPuntos(prediction, official) {
+  if (!official) return null;
+  const predH = prediction?.home, predA = prediction?.away;
+  if (predH == null || predA == null) return null;
+  const offH = Number(official.goles_local), offA = Number(official.goles_vis);
+  if (predH === offH && predA === offA) return 3;
+  const predDir = predH > predA ? "H" : predH < predA ? "A" : "D";
+  const offDir  = offH  > offA  ? "H" : offH  < offA  ? "A" : "D";
+  return predDir === offDir ? 1 : 0;
+}
+
 // ─── Fila de partido ──────────────────────────────────────────────────────────
 
-function MatchRow({ match, index, prediction, onPredictionChange, readOnly = false }) {
+function MatchRow({ match, index, prediction, onPredictionChange, readOnly = false, officialResult = null }) {
   const finished = match.estado === "FINISHED";
   const isEven   = index % 2 === 0;
+  const bg       = isEven ? "white" : "#f9fafd";
+  const hasPred  = prediction?.home != null && prediction?.away != null;
+  const pts      = (officialResult && hasPred) ? calcPuntos(prediction, officialResult) : null;
   return (
-    <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", gap: "6px", background: isEven ? "white" : "#f9fafd", borderBottom: "1px solid var(--ch-border)" }}>
+    <div style={{ borderBottom: "1px solid var(--ch-border)" }}>
+    <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", gap: "6px", background: bg }}>
       <div className="match-col-fecha">
         {match.fecha}
       </div>
@@ -146,6 +163,63 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
       <div className="match-col-estadio">
         {match.estadio}
       </div>
+    </div>
+    {/* ─── Fila de comparación resultado oficial ─── */}
+    {officialResult && (
+      <div style={{
+        display: "flex", alignItems: "center", gap: "8px",
+        padding: "4px 12px 8px", background: bg,
+        flexWrap: "wrap",
+      }}>
+        <span style={{
+          fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700",
+          fontSize: "10px", color: "#8097c0", textTransform: "uppercase",
+          letterSpacing: "0.5px",
+        }}>
+          Oficial:
+        </span>
+        <span style={{
+          fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
+          fontSize: "14px", color: "#003080",
+          background: "#e8f0ff", padding: "1px 9px", borderRadius: "5px",
+          letterSpacing: "0.5px",
+        }}>
+          {officialResult.goles_local} – {officialResult.goles_vis}
+        </span>
+
+        {hasPred ? (
+          <>
+            <span style={{ color: "#c5d5f0", fontSize: "12px" }}>·</span>
+            <span style={{
+              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700",
+              fontSize: "10px", color: "#8097c0", textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}>
+              Tu pronóstico:
+            </span>
+            <span style={{
+              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
+              fontSize: "14px", color: "#003080", letterSpacing: "0.5px",
+            }}>
+              {prediction.home} – {prediction.away}
+            </span>
+            <span style={{
+              fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "800",
+              fontSize: "11px", letterSpacing: "0.3px", padding: "2px 10px",
+              borderRadius: "10px",
+              color:      pts === 3 ? "#1b7c2e" : pts === 1 ? "#005aba" : "#c0392b",
+              background: pts === 3 ? "#e6f4ea" : pts === 1 ? "#e3f0ff" : "#fdecea",
+            }}>
+              {pts === 3 ? "✅ Exacto +3 pts" : pts === 1 ? "✅ Resultado +1 pt" : "❌ 0 pts"}
+            </span>
+          </>
+        ) : (
+          <span style={{ fontSize: "10px", color: "#b0bec5", fontStyle: "italic", fontFamily: "'Inter', sans-serif" }}>
+            Sin pronóstico registrado
+          </span>
+        )}
+      </div>
+    )}
     </div>
   );
 }
@@ -484,6 +558,7 @@ export default function CalendarioPage({
   const [activeGroupFilter, setActiveGroupFilter] = useState(GROUP_IDS[0]);
   const [bracket, setBracket]               = useState(null);
   const [loadingBracket, setLoadingBracket] = useState(true);
+  const [oficialResultados, setOficialResultados] = useState({});
 
   // Cargar bracket oficial (una sola vez)
   useEffect(() => {
@@ -491,6 +566,13 @@ export default function CalendarioPage({
       .then((d) => setBracket(d.bracket ?? {}))
       .catch(() => setBracket({}))
       .finally(() => setLoadingBracket(false));
+  }, []);
+
+  // Cargar resultados oficiales para mostrar comparación en predicciones
+  useEffect(() => {
+    adminApi.obtenerResultados()
+      .then((d) => setOficialResultados(d.resultados ?? {}))
+      .catch(() => {});
   }, []);
 
   const byGroup = useMemo(() => {
@@ -618,7 +700,15 @@ export default function CalendarioPage({
                         <div className="match-col-estadio" style={{ ...COL_HD }}>Estadio</div>
                       </div>
                       {groupMatches.map((match, i) => (
-                        <MatchRow key={match.id} match={match} index={i} prediction={scorePredictions[match.id]} onPredictionChange={onScoreChange} readOnly={readOnly} />
+                        <MatchRow
+                          key={match.id}
+                          match={match}
+                          index={i}
+                          prediction={scorePredictions[match.id]}
+                          onPredictionChange={onScoreChange}
+                          readOnly={readOnly}
+                          officialResult={oficialResultados[String(match.id)] ?? null}
+                        />
                       ))}
                       <GroupStandings standings={standings} />
                     </div>

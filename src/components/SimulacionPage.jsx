@@ -98,7 +98,7 @@ export default function SimulacionPage({ groupsData }) {
             letterSpacing: "0.5px",
             marginBottom: "4px",
           }}>
-            Modo Simulación — Solo para explorar
+            Modo Simulación
           </div>
           <div style={{
             fontFamily: "'Inter', sans-serif",
@@ -106,7 +106,7 @@ export default function SimulacionPage({ groupsData }) {
             color: "#5a4000",
             lineHeight: 1.55,
           }}>
-            Aquí podés predecir tu campeón del mundo de forma interactiva. <strong>Esta sección no forma parte de La Jugada Ganadora Chorotega</strong> y no afecta tu puntaje ni tu participación en el sorteo.
+            Aquí puedes predecir tu campeón del mundo de forma interactiva. <strong>Esta sección no forma parte de La Jugada Ganadora Chorotega</strong> y no afecta tu puntaje ni tu participación en el sorteo.
           </div>
         </div>
       </div>
@@ -221,7 +221,7 @@ export default function SimulacionPage({ groupsData }) {
           }}>
             {completedGroups === 12
               ? "✅ Todos los grupos completados. ¡Ve a la pestaña Llaves!"
-              : <>Completá 1° y 2° de cada grupo para desbloquear los 16avos. Grupos listos: <strong>{completedGroups}/12</strong></>
+              : <>Completa los clasificados de cada grupo para desbloquear los 16avos. Grupos listos: <strong>{completedGroups}/12</strong></>
             }
           </div>
         </>
@@ -236,7 +236,7 @@ export default function SimulacionPage({ groupsData }) {
               borderRadius: "8px", padding: "10px 16px", marginBottom: "20px",
               fontSize: "13px", color: "#1565c0", fontFamily: "'Inter', sans-serif",
             }}>
-              Completá 1° y 2° de cada grupo en la pestaña <strong>Grupos</strong> para desbloquear las llaves.
+              Completa los clasificados de cada grupo en la pestaña <strong>Grupos</strong> para desbloquear las llaves.
               Grupos listos: <strong>{completedGroups}/12</strong>
             </div>
           )}
