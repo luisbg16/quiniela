@@ -9,6 +9,8 @@ import {
   obtenerRankingPublico,
   obtenerUsuarios,
   setAfiliado,
+  obtenerPartidosConfig,
+  togglePartidoConfig,
 } from "../controllers/adminController.js";
 
 const router = Router();
@@ -21,8 +23,11 @@ router.get("/resultados",      obtenerResultados);
 // GET  /api/admin/bracket             — Bracket oficial (público)
 router.get("/bracket",         obtenerBracketOficial);
 
-// GET  /api/admin/ranking             — Tabla de posiciones (público)
+// GET  /api/admin/ranking             — Tabla de posiciones (público, paginada)
 router.get("/ranking",         obtenerRankingPublico);
+
+// GET  /api/admin/partidos-config     — Config de partidos abiertos/cerrados (público)
+router.get("/partidos-config", obtenerPartidosConfig);
 
 // ─── Rutas protegidas (requieren login + admin) ───────────────────────────────
 router.use(verificarToken, soloAdmin);
@@ -41,5 +46,8 @@ router.get("/usuarios",        obtenerUsuarios);
 
 // POST /api/admin/set-afiliado        — Marcar/desmarcar afiliado manualmente
 router.post("/set-afiliado",   setAfiliado);
+
+// POST /api/admin/partidos-config     — Abrir/cerrar partido para predicciones
+router.post("/partidos-config", togglePartidoConfig);
 
 export default router;

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   apellido         VARCHAR(100)  NOT NULL,
   email            VARCHAR(150)  UNIQUE NOT NULL,
   numero_asociado  VARCHAR(50),
+  telefono         VARCHAR(20),
   password_hash    VARCHAR(255)  NOT NULL,
   es_admin         BOOLEAN       DEFAULT FALSE,
   es_afiliado      BOOLEAN       DEFAULT FALSE,  -- verificado automáticamente al registrar (webservice) o manual desde admin
@@ -24,8 +25,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
   ultimo_acceso    TIMESTAMPTZ
 );
 
--- Migración segura: agregar columna si ya existe la tabla (instalaciones previas)
+-- Migraciones seguras: agregar columnas si ya existe la tabla (instalaciones previas)
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS es_afiliado BOOLEAN DEFAULT FALSE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
 
 -- ─── Tabla de quinielas ──────────────────────────────────────────────────────
 -- predicciones: guarda TODO el estado de picks en un solo objeto JSON:
@@ -77,6 +79,16 @@ ALTER TABLE resultados_oficiales ADD COLUMN IF NOT EXISTS fase VARCHAR(50) NOT N
 
 -- Migración: agregar updated_at a quinielas (requerida por triggers heredados)
 ALTER TABLE quinielas ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- ─── Tabla de configuración de partidos ──────────────────────────────────────
+-- El admin puede cerrar partidos individualmente para impedir nuevas predicciones.
+-- Si un partido NO aparece en esta tabla → está abierto por defecto.
+-- Si está con abierto = FALSE → el backend rechaza predicciones para ese partido.
+CREATE TABLE IF NOT EXISTS partidos_config (
+  partido_id  VARCHAR(100) PRIMARY KEY,
+  abierto     BOOLEAN DEFAULT TRUE,
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- ─── Índices ─────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_quinielas_usuario_id ON quinielas(usuario_id);

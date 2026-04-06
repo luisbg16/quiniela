@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { ranking as rankingApi } from "../services/api.js";
 
 const MEDALLAS = ["🥇", "🥈", "🥉"];
 const PAGE_SIZE = 20;
 
-function PaginadorTabla({ page, total, onPage }) {
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+function PaginadorTabla({ page, totalPages, total, onPage }) {
   if (totalPages <= 1) return null;
   const nums = Array.from({ length: totalPages }, (_, i) => i + 1)
     .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
@@ -36,22 +35,28 @@ function PaginadorTabla({ page, total, onPage }) {
 }
 
 export default function TablaPage() {
-  const [data, setData]       = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
-  const [page, setPage]       = useState(1);
+  const [rows,       setRows]       = useState([]);
+  const [total,      setTotal]      = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState("");
+  const [page,       setPage]       = useState(1);
 
   useEffect(() => {
-    rankingApi.obtener()
-      .then((r) => setData(r.ranking ?? []))
+    setLoading(true);
+    setError("");
+    rankingApi.obtener({ page, limit: PAGE_SIZE })
+      .then((r) => {
+        setRows(r.ranking ?? []);
+        setTotal(r.total ?? 0);
+        setTotalPages(r.totalPages ?? 1);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
-  const visibleRows = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return data.slice(start, start + PAGE_SIZE);
-  }, [data, page]);
+  // visibleRows viene ya paginado del backend
+  const visibleRows = rows;
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 24px" }}>
@@ -98,7 +103,7 @@ export default function TablaPage() {
 
       {/* Tabla */}
       {!loading && !error && (
-        data.length === 0 ? (
+        total === 0 ? (
           <div style={{
             textAlign: "center", padding: "56px 24px",
             background: "white", borderRadius: "12px",
@@ -219,8 +224,8 @@ export default function TablaPage() {
         )
       )}
 
-      {!loading && !error && data.length > PAGE_SIZE && (
-        <PaginadorTabla page={page} total={data.length} onPage={setPage} />
+      {!loading && !error && totalPages > 1 && (
+        <PaginadorTabla page={page} totalPages={totalPages} total={total} onPage={setPage} />
       )}
 
       <p style={{ fontSize: "11px", color: "#b0bec5", textAlign: "center", marginTop: "20px", fontFamily: "'Inter', sans-serif" }}>

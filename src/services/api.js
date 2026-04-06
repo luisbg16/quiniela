@@ -47,10 +47,10 @@ async function request(path, options = {}) {
 
 export const auth = {
   /** Crear cuenta nueva */
-  async register({ nombre, apellido, email, password, numeroAsociado }) {
+  async register({ nombre, apellido, email, password, numeroAsociado, telefono }) {
     const data = await request("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ nombre, apellido, email, password, numeroAsociado }),
+      body: JSON.stringify({ nombre, apellido, email, password, numeroAsociado, telefono }),
     });
     setToken(data.token);
     return data;
@@ -151,11 +151,29 @@ export const admin = {
   },
 };
 
-// ─── Ranking público ──────────────────────────────────────────────────────────
+// ─── Ranking público (paginado en backend) ────────────────────────────────────
 
 export const ranking = {
+  /** page: número de página (1-based), limit: filas por página */
+  async obtener({ page = 1, limit = 20 } = {}) {
+    return request(`/admin/ranking?page=${page}&limit=${limit}`);
+  },
+};
+
+// ─── Configuración de partidos (abierto/cerrado) ──────────────────────────────
+
+export const partidosConfig = {
+  /** Obtener mapa { [partidoId]: abierto } — público */
   async obtener() {
-    return request("/admin/ranking");
+    return request("/admin/partidos-config");
+  },
+
+  /** Abrir o cerrar un partido (admin) — requiere JWT de admin */
+  async toggle({ partidoId, abierto }) {
+    return request("/admin/partidos-config", {
+      method: "POST",
+      body: JSON.stringify({ partidoId, abierto }),
+    });
   },
 };
 

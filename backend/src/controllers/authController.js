@@ -2,30 +2,42 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/database.js";
 
-// ─── Webservice de verificación de afiliados ──────────────────────────────────
+// ─── Webservice de verificación de afiliados (Oracle ORDS) ───────────────────
 //
-// Configurable mediante variables de entorno:
-//   AFILIADOS_WS_URL   — URL base del webservice (ej: https://ws.chorotega.hn/afiliados)
-//   AFILIADOS_WS_TOKEN — Bearer token de autenticación (opcional)
+// Variables de entorno requeridas:
+//   AFILIADOS_WS_URL  — URL base del endpoint ORDS
+//   CORE_USERNAME     — Usuario de autenticación ORDS
+//   CORE_PASSWORD     — Contraseña de autenticación ORDS
+//   CORE_APP_ID       — Application ID enviado como header
 //
-// El webservice debe responder con JSON que contenga al menos uno de estos campos:
+// Autenticación: HTTP Basic Auth (usuario:contraseña en Base64)
+// El webservice debe responder con JSON que contenga al menos uno de:
 //   { esAfiliado: true }  |  { activo: true }  |  { afiliado: true }  |  { estado: "ACTIVO" }
 //
 // La función NUNCA bloquea el registro si el WS no está disponible o falla.
-// Devuelve: { esAfiliado: boolean, wsDisponible: boolean }
 //
 async function verificarAfiliado(numeroAsociado) {
   if (!numeroAsociado) return { esAfiliado: false, wsDisponible: false };
 
-  const wsUrl = process.env.AFILIADOS_WS_URL;
+  const wsUrl    = process.env.AFILIADOS_WS_URL;
+  const username = process.env.CORE_USERNAME;
+  const password = process.env.CORE_PASSWORD;
+  const appId    = process.env.CORE_APP_ID;
 
-  // Si no hay URL configurada, el WS no está disponible aún
   if (!wsUrl) return { esAfiliado: false, wsDisponible: false };
 
   try {
     const headers = { "Content-Type": "application/json" };
-    if (process.env.AFILIADOS_WS_TOKEN) {
-      headers["Authorization"] = `Bearer ${process.env.AFILIADOS_WS_TOKEN}`;
+
+    // Basic Auth: Base64(usuario:contraseña)
+    if (username && password) {
+      const token = Buffer.from(`${username}:${password}`).toString("base64");
+      headers["Authorization"] = `Basic ${token}`;
+    }
+
+    // Application ID como header Oracle ORDS
+    if (appId) {
+      headers["Application-ID"] = appId;
     }
 
     const resp = await fetch(
@@ -45,7 +57,10 @@ async function verificarAfiliado(numeroAsociado) {
       data?.estado === "ACTIVO"
     );
 
-    return { esAfiliado, wsDisponible: true };
+    // Extraer teléfono si el WS lo devuelve (campo telefono, celular, o phone)
+    const telefono = data?.telefono || data?.celular || data?.phone || null;
+
+    return { esAfiliado, wsDisponible: true, telefono };
   } catch {
     // Error de red o timeout — no bloquear el registro
     return { esAfiliado: false, wsDisponible: false };
@@ -66,7 +81,7 @@ export async function checkAfiliado(req, res) {
   }
 
   const resultado = await verificarAfiliado(dni);
-  return res.json(resultado); // { esAfiliado: bool, wsDisponible: bool }
+  return res.json(resultado); // { esAfiliado: bool, wsDisponible: bool, telefono: string|null }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,6 +106,7 @@ function sanitizarUsuario(usuario) {
     nombre:          usuario.nombre,
     apellido:        usuario.apellido,
     email:           usuario.email,
+    telefono:        usuario.telefono,
     numeroAsociado:  usuario.numero_asociado,
     esAdmin:         usuario.es_admin,
     esAfiliado:      usuario.es_afiliado,
@@ -102,7 +118,7 @@ function sanitizarUsuario(usuario) {
 
 export async function registrar(req, res) {
   try {
-    const { nombre, apellido, email, password, numeroAsociado } = req.body;
+    const { nombre, apellido, email, password, numeroAsociado, telefono } = req.body;
 
     // Validaciones básicas
     if (!nombre?.trim() || !apellido?.trim() || !email?.trim() || !password) {
@@ -136,8 +152,8 @@ export async function registrar(req, res) {
 
     // Insertar usuario
     const resultado = await pool.query(
-      `INSERT INTO usuarios (nombre, apellido, email, password_hash, numero_asociado, es_afiliado)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO usuarios (nombre, apellido, email, password_hash, numero_asociado, telefono, es_afiliado)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
       [
         nombre.trim(),
@@ -145,6 +161,7 @@ export async function registrar(req, res) {
         email.toLowerCase().trim(),
         passwordHash,
         numeroAsociado?.trim() || null,
+        telefono?.trim() || null,
         esAfiliado,
       ]
     );

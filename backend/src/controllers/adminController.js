@@ -174,9 +174,20 @@ export async function calcularTodosPuntos(req, res) {
   }
 }
 
-// ─── Ranking público (no requiere admin) ─────────────────────────────────────
+// ─── Ranking público con paginación backend ───────────────────────────────────
 export async function obtenerRankingPublico(req, res) {
   try {
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    // Total de participantes
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM quinielas q JOIN usuarios u ON q.usuario_id = u.id WHERE u.activo = TRUE`
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    // Filas paginadas con posición global correcta
     const rows = await pool.query(
       `SELECT
          ROW_NUMBER() OVER (ORDER BY q.puntaje DESC, q.fecha_actualizacion ASC) AS posicion,
@@ -189,11 +200,62 @@ export async function obtenerRankingPublico(req, res) {
        FROM quinielas q
        JOIN usuarios u ON q.usuario_id = u.id
        WHERE u.activo = TRUE
-       ORDER BY q.puntaje DESC, q.fecha_actualizacion ASC`
+       ORDER BY q.puntaje DESC, q.fecha_actualizacion ASC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
-    return res.json({ ranking: rows.rows });
+
+    return res.json({
+      ranking:    rows.rows,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
   } catch (err) {
     console.error("Error obtenerRankingPublico:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+// ─── Configuración de partidos (abierto/cerrado) ──────────────────────────────
+
+/** Obtener todos los partidos con abierto = FALSE (público, para que el frontend sepa cuáles bloquear) */
+export async function obtenerPartidosConfig(req, res) {
+  try {
+    const rows = await pool.query(
+      "SELECT partido_id, abierto FROM partidos_config ORDER BY partido_id"
+    );
+    // Devuelve mapa { [partidoId]: abierto }
+    const config = {};
+    rows.rows.forEach((r) => { config[r.partido_id] = r.abierto; });
+    return res.json({ config });
+  } catch (err) {
+    console.error("Error obtenerPartidosConfig:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+/** Toggle abierto/cerrado de un partido (solo admin) */
+export async function togglePartidoConfig(req, res) {
+  try {
+    const { partidoId, abierto } = req.body;
+
+    if (partidoId === undefined || abierto === undefined) {
+      return res.status(400).json({ error: "partidoId y abierto son obligatorios" });
+    }
+
+    await pool.query(
+      `INSERT INTO partidos_config (partido_id, abierto, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (partido_id)
+       DO UPDATE SET abierto = $2, updated_at = NOW()`,
+      [String(partidoId), Boolean(abierto)]
+    );
+
+    return res.json({ mensaje: `Partido ${partidoId} ${abierto ? "abierto" : "cerrado"} para predicciones` });
+  } catch (err) {
+    console.error("Error togglePartidoConfig:", err);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }

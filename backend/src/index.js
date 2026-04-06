@@ -5,8 +5,26 @@ import dotenv from "dotenv";
 import authRoutes     from "./routes/auth.js";
 import quinielaRoutes from "./routes/quiniela.js";
 import adminRoutes    from "./routes/admin.js";
+import pool           from "./config/database.js";
 
 dotenv.config();
+
+// ── Migración automática de tablas nuevas ─────────────────────────────────────
+// Se ejecuta una vez al arrancar. Usa IF NOT EXISTS → seguro correr varias veces.
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS partidos_config (
+        partido_id  VARCHAR(100) PRIMARY KEY,
+        abierto     BOOLEAN DEFAULT TRUE,
+        updated_at  TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log("✅  Migración partidos_config OK");
+  } catch (err) {
+    console.error("❌  Error en migración partidos_config:", err.message);
+  }
+})();
 
 const app  = express();
 const PORT = process.env.PORT || 3001;

@@ -1,7 +1,11 @@
 import pool from "../config/database.js";
 
 // ─── Guardar o actualizar quiniela ────────────────────────────────────────────
-
+//
+// Seguridad: los partidos cerrados por el admin NO se actualizan.
+// Si el usuario tiene predicciones previas para esos partidos, se mantienen.
+// Si no tiene predicciones previas para un partido cerrado, se ignoran las nuevas.
+//
 export async function guardarQuiniela(req, res) {
   try {
     const usuarioId = req.usuario.id;
@@ -11,8 +15,44 @@ export async function guardarQuiniela(req, res) {
       return res.status(400).json({ error: "Las predicciones deben ser un objeto válido" });
     }
 
-    // UPSERT: inserta si no existe, actualiza si ya tiene una quiniela
-    // JSON.stringify es obligatorio — pg no serializa objetos a JSONB automáticamente
+    // ── 1. Obtener lista de partidos cerrados ─────────────────────────────────
+    const cfgRows = await pool.query(
+      "SELECT partido_id FROM partidos_config WHERE abierto = FALSE"
+    );
+    const cerrados = new Set(cfgRows.rows.map((r) => r.partido_id));
+
+    // ── 2. Obtener quiniela existente del usuario (para preservar picks cerrados) ──
+    let prevPredicciones = null;
+    if (cerrados.size > 0) {
+      const prev = await pool.query(
+        "SELECT predicciones FROM quinielas WHERE usuario_id = $1",
+        [usuarioId]
+      );
+      prevPredicciones = prev.rows[0]?.predicciones ?? null;
+    }
+
+    // ── 3. Construir predicciones finales ─────────────────────────────────────
+    // Partidos cerrados → conservar valor guardado (o null si es la primera vez).
+    // Partidos abiertos → usar el valor que manda el usuario.
+    let prediccionesFinal = { ...predicciones };
+
+    if (cerrados.size > 0 && predicciones.scores) {
+      const scoresFinal = { ...(predicciones.scores ?? {}) };
+
+      cerrados.forEach((pid) => {
+        if (prevPredicciones?.scores?.[pid] !== undefined) {
+          // Restaurar valor guardado previamente
+          scoresFinal[pid] = prevPredicciones.scores[pid];
+        } else {
+          // No había predicción guardada; eliminar cualquier valor nuevo
+          delete scoresFinal[pid];
+        }
+      });
+
+      prediccionesFinal = { ...predicciones, scores: scoresFinal };
+    }
+
+    // ── 4. UPSERT con predicciones ya saneadas ────────────────────────────────
     const resultado = await pool.query(
       `INSERT INTO quinielas (usuario_id, predicciones, fecha_actualizacion)
        VALUES ($1, $2::jsonb, NOW())
@@ -21,12 +61,19 @@ export async function guardarQuiniela(req, res) {
          predicciones        = EXCLUDED.predicciones,
          fecha_actualizacion = NOW()
        RETURNING *`,
-      [usuarioId, JSON.stringify(predicciones)]
+      [usuarioId, JSON.stringify(prediccionesFinal)]
     );
+
+    // Informar qué partidos fueron ignorados (útil para debugging en frontend)
+    const ignorados = Object.keys(predicciones.scores ?? {}).filter((id) => cerrados.has(id));
 
     return res.json({
       mensaje:   "Quiniela guardada exitosamente",
       quiniela:  resultado.rows[0],
+      ...(ignorados.length > 0 && {
+        advertencia: `Predicciones ignoradas para partidos cerrados: ${ignorados.join(", ")}`,
+        cerrados:    ignorados,
+      }),
     });
   } catch (err) {
     console.error("Error al guardar quiniela:", err);

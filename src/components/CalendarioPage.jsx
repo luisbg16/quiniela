@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { GROUP_IDS } from "../data/groups";
 import { getFlagUrl } from "../data/flags.js";
 import { computeStandings } from "../utils/standings.js";
-import { admin as adminApi } from "../services/api.js";
+import { admin as adminApi, partidosConfig as partidosConfigApi } from "../services/api.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -137,15 +137,15 @@ function calcPuntos(prediction, official) {
 
 // ─── Fila de partido ──────────────────────────────────────────────────────────
 
-function MatchRow({ match, index, prediction, onPredictionChange, readOnly = false, officialResult = null }) {
+function MatchRow({ match, index, prediction, onPredictionChange, readOnly = false, officialResult = null, adminClosed = false }) {
   const finished = match.estado === "FINISHED";
   const isEven   = index % 2 === 0;
   const bg       = isEven ? "white" : "#f9fafd";
   const hasPred  = prediction?.home != null && prediction?.away != null;
   const pts      = (officialResult && hasPred) ? calcPuntos(prediction, officialResult) : null;
 
-  // Bloqueo individual: si ya tiene resultado oficial O el partido ya comenzó
-  const isMatchLocked = readOnly || !!officialResult || matchHasStarted(match);
+  // Bloqueo individual: resultado oficial, partido iniciado, o cerrado por admin
+  const isMatchLocked = readOnly || !!officialResult || matchHasStarted(match) || adminClosed;
 
   return (
     <div style={{ borderBottom: "1px solid var(--ch-border)" }}>
@@ -182,6 +182,14 @@ function MatchRow({ match, index, prediction, onPredictionChange, readOnly = fal
       <div className="match-col-estadio">
         {match.estadio}
       </div>
+      {/* Indicador de cierre por admin */}
+      {adminClosed && !officialResult && !finished && (
+        <span title="El admin cerró las predicciones para este partido" style={{
+          fontSize: "10px", color: "#c62828", fontWeight: "700",
+          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.3px",
+          padding: "0 6px", flexShrink: 0,
+        }}>🔒</span>
+      )}
     </div>
     {/* ─── Fila de comparación resultado oficial ─── */}
     {officialResult && (
@@ -564,6 +572,8 @@ export default function CalendarioPage({
   const [bracket, setBracket]               = useState(null);
   const [loadingBracket, setLoadingBracket] = useState(true);
   const [oficialResultados, setOficialResultados] = useState({});
+  // config de partidos cerrados por admin: { [partidoId]: false }
+  const [partidosConfigMap, setPartidosConfigMap] = useState({});
 
   // Cargar bracket oficial (una sola vez)
   useEffect(() => {
@@ -573,10 +583,13 @@ export default function CalendarioPage({
       .finally(() => setLoadingBracket(false));
   }, []);
 
-  // Cargar resultados oficiales para mostrar comparación en predicciones
+  // Cargar resultados oficiales y config de partidos cerrados
   useEffect(() => {
     adminApi.obtenerResultados()
       .then((d) => setOficialResultados(d.resultados ?? {}))
+      .catch(() => {});
+    partidosConfigApi.obtener()
+      .then((d) => setPartidosConfigMap(d.config ?? {}))
       .catch(() => {});
   }, []);
 
@@ -713,6 +726,7 @@ export default function CalendarioPage({
                           onPredictionChange={onScoreChange}
                           readOnly={readOnly}
                           officialResult={oficialResultados[String(match.id)] ?? null}
+                          adminClosed={partidosConfigMap[String(match.id)] === false}
                         />
                       ))}
                       <GroupStandings standings={standings} />

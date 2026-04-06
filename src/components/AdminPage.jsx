@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { admin as adminApi } from "../services/api.js";
+import { admin as adminApi, partidosConfig as partidosConfigApi } from "../services/api.js";
 import { WC2026_MATCHES } from "../data/wc2026matches.js";
 import { GROUPS_DATA, GROUP_IDS } from "../data/groups.js";
 
@@ -40,10 +40,14 @@ function StatusBadge({ saved }) {
 // ══════════════════════════════════════════════════════════
 
 function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
-  const [local, setLocal] = useState({});     // { [matchId]: { h, a } }
-  const [saved, setSaved] = useState({});
+  const [local, setLocal]     = useState({});     // { [matchId]: { h, a } }
+  const [saved, setSaved]     = useState({});
   const [loading, setLoading] = useState({});
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
+
+  // Estado de partidos (abierto/cerrado)
+  const [config,   setConfig]   = useState({});   // { [partidoId]: abierto }
+  const [toggling, setToggling] = useState({});
 
   // Inicializar desde los resultados ya guardados
   useEffect(() => {
@@ -55,9 +59,29 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
     setSaved(Object.fromEntries(Object.keys(resultadosOficiales).map((id) => [id, true])));
   }, [resultadosOficiales]);
 
+  // Cargar config de partidos (abierto/cerrado)
+  useEffect(() => {
+    partidosConfigApi.obtener()
+      .then((d) => setConfig(d.config ?? {}))
+      .catch(() => {});
+  }, []);
+
   const handleChange = (matchId, side, val) => {
     setLocal((prev) => ({ ...prev, [matchId]: { ...prev[matchId], [side]: val } }));
     setSaved((prev) => ({ ...prev, [matchId]: false }));
+  };
+
+  // Toggle manual de estado abierto/cerrado
+  const handleToggleEstado = async (partidoId, abierto) => {
+    setToggling((prev) => ({ ...prev, [partidoId]: true }));
+    try {
+      await partidosConfigApi.toggle({ partidoId: String(partidoId), abierto });
+      setConfig((prev) => ({ ...prev, [String(partidoId)]: abierto }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setToggling((prev) => ({ ...prev, [partidoId]: false }));
+    }
   };
 
   const handleSave = async (match) => {
@@ -69,6 +93,9 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
     try {
       await adminApi.guardarResultado({ partidoId: id, golesLocal: h, golesVis: a, fase: "grupos" });
       setSaved((prev) => ({ ...prev, [id]: true }));
+      // Al guardar resultado → cerrar partido automáticamente
+      await partidosConfigApi.toggle({ partidoId: id, abierto: false });
+      setConfig((prev) => ({ ...prev, [id]: false }));
       onSave();
     } catch (e) {
       setError(e.message);
@@ -93,8 +120,15 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
             {matches.map((m) => {
               const id = String(m.id);
               const row = local[id] ?? { h: null, a: null };
+              // Si NO hay fila en config → está abierto (true por defecto)
+              const abierto = config[id] !== false;
+              const tog = toggling[id];
               return (
-                <div key={id} style={styles.matchRow}>
+                <div key={id} style={{
+                  ...styles.matchRow,
+                  borderLeft: `4px solid ${abierto ? "#c8e6c9" : "#ffcdd2"}`,
+                  background: abierto ? "#fafffe" : "#fff8f8",
+                }}>
                   <span style={styles.teamName}>{m.local?.nombre}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <ScoreInput value={row.h} onChange={(v) => handleChange(id, "h", v)} disabled={loading[id]} />
@@ -111,6 +145,28 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
                     {loading[id] ? "..." : "Guardar"}
                   </button>
                   <StatusBadge saved={saved[id]} />
+                  {/* Control de estado inline */}
+                  <span style={{
+                    fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "10px",
+                    background: abierto ? "#e8f5e9" : "#ffebee",
+                    color: abierto ? "#2e7d32" : "#c62828",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {abierto ? "🔓 Abierto" : "🔒 Cerrado"}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={tog || loading[id]}
+                    onClick={() => handleToggleEstado(id, !abierto)}
+                    style={{
+                      ...styles.saveBtn,
+                      padding: "4px 10px", fontSize: "10px",
+                      background: abierto ? "#d32f2f" : "#2e7d32",
+                      color: "white",
+                    }}
+                  >
+                    {tog ? "…" : abierto ? "Cerrar" : "Abrir"}
+                  </button>
                 </div>
               );
             })}
@@ -698,7 +754,7 @@ export default function AdminPage({ onBack }) {
             onSave={(d) => setBracketOficial(d)}
           />
         )}
-        {tab === "usuarios" && <SeccionUsuarios />}
+        {tab === "usuarios"  && <SeccionUsuarios />}
       </div>
     </div>
   );

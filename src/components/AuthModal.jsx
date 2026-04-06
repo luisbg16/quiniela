@@ -194,6 +194,7 @@ function RegisterForm({ onSuccess, onSwitch }) {
   const [nombre,   setNombre]   = useState("");
   const [apellido, setApellido] = useState("");
   const [email,    setEmail]    = useState("");
+  const [telefono, setTelefono] = useState("");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
   const [error,    setError]    = useState("");
@@ -224,6 +225,8 @@ function RegisterForm({ onSuccess, onSwitch }) {
           setAfiliadoStatus("no-ws");
         } else {
           setAfiliadoStatus(data.esAfiliado ? "afiliado" : "no-afiliado");
+          // Auto-llenar teléfono si el WS lo devuelve
+          if (data.telefono) setTelefono(data.telefono);
         }
       } catch {
         // Error de red u otro → tratar como WS no disponible
@@ -260,6 +263,7 @@ function RegisterForm({ onSuccess, onSwitch }) {
       const data = await auth.register({
         nombre, apellido, email, password,
         numeroAsociado: dniLimpio || undefined,
+        telefono: telefono.trim() || undefined,
       });
       onSuccess(data.usuario);
     } catch (err) {
@@ -286,6 +290,9 @@ function RegisterForm({ onSuccess, onSwitch }) {
 
       <Field label="Correo electrónico" type="email" value={email} onChange={setEmail}
         placeholder="tu@email.com" required />
+
+      <Field label="Teléfono / Celular" type="tel" value={telefono} onChange={setTelefono}
+        placeholder="Ej. 9999-9999" />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         <Field label="Contraseña" type="password" value={password} onChange={setPassword}

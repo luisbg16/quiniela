@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { quiniela as quinielaApi, auth } from "./services/api.js";
 import Navbar from "./components/Navbar";
 import ResultsBar from "./components/ResultsBar";
@@ -18,11 +18,22 @@ import { getFlagUrl } from "./data/flags.js";
 
 const PLACEHOLDER_MATCHES = [];
 
+// ── Routing basado en hash ────────────────────────────────────────────────────
+// Soporta URLs tipo /#predicciones, /#resultados, etc.
+// No requiere configuración de servidor y funciona en Vercel/Netlify/GitHub Pages.
+const VALID_PAGES = new Set(["home", "predicciones", "simulacion", "resultados", "tabla", "condiciones", "admin"]);
+
+function getPageFromHash() {
+  const hash = window.location.hash.replace(/^#\/?/, "").trim();
+  return VALID_PAGES.has(hash) ? hash : "home";
+}
+
 export default function App() {
   const [groupsData,  setGroupsData]  = useState(GROUPS_DATA);
   const [matchesData, setMatchesData] = useState(PLACEHOLDER_MATCHES);
 
-  const [activePage, setActivePage] = useState("home");
+  // Página activa derivada del hash de la URL
+  const [activePage, setActivePage] = useState(getPageFromHash);
 
   const [currentUser,   setCurrentUser]   = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -35,8 +46,23 @@ export default function App() {
   // Modo sólo lectura: true cuando hay quiniela guardada cargada
   const [readOnly, setReadOnly] = useState(false);
 
-  // Popup de bienvenida
-  const [showWelcome, setShowWelcome] = useState(true);
+  // Popup de bienvenida — solo la primera visita (se guarda en localStorage)
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !localStorage.getItem("ch_visited"); } catch { return true; }
+  });
+
+  // ── Escuchar cambios de hash (botones atrás/adelante del navegador) ──────────
+  const ignoreHashChange = useRef(false);
+  useEffect(() => {
+    const onHashChange = () => {
+      if (ignoreHashChange.current) { ignoreHashChange.current = false; return; }
+      const page = getPageFromHash();
+      setActivePage(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   // ——— Cargar datos del Mundial ———
   useEffect(() => {
@@ -83,9 +109,18 @@ export default function App() {
     setScorePredictions((prev) => ({ ...prev, [matchId]: scores }));
   }, []);
 
-  const handleNavigate = (page) => {
-    setActivePage(page);
+  const handleNavigate = useCallback((page) => {
+    const target = VALID_PAGES.has(page) ? page : "home";
+    // Actualizar hash sin disparar el listener (ya estamos manejando el estado)
+    ignoreHashChange.current = true;
+    window.location.hash = target === "home" ? "" : target;
+    setActivePage(target);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleCloseWelcome = () => {
+    try { localStorage.setItem("ch_visited", "1"); } catch { /* incognito */ }
+    setShowWelcome(false);
   };
 
   const handleLogout = () => {
@@ -95,12 +130,13 @@ export default function App() {
     setSavedOk(false);
     setSaveError("");
     setReadOnly(false);
+    handleNavigate("home");
   };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--ch-bg)", color: "var(--ch-text)" }}>
       {/* ——— POPUP DE BIENVENIDA ——— */}
-      {showWelcome && <WelcomePopup onClose={() => setShowWelcome(false)} />}
+      {showWelcome && <WelcomePopup onClose={handleCloseWelcome} />}
 
       <Navbar
         activePage={activePage}
@@ -114,7 +150,7 @@ export default function App() {
       {activePage === "predicciones" && (
         <CalendarioPage
           matches={matchesData}
-          onBack={() => setActivePage("home")}
+          onBack={() => handleNavigate("home")}
           scorePredictions={scorePredictions}
           onScoreChange={handleScoreChange}
           onSave={handleSave}
@@ -125,6 +161,7 @@ export default function App() {
           onDismissSaved={() => setSavedOk(false)}
           readOnly={readOnly}
           onModify={() => { setReadOnly(false); setSavedOk(false); setSaveError(""); }}
+
         />
       )}
 
@@ -145,7 +182,7 @@ export default function App() {
 
       {/* ——— CONDICIONES ——— */}
       {activePage === "condiciones" && (
-        <CondicionesPage onBack={() => setActivePage("home")} />
+        <CondicionesPage onBack={() => handleNavigate("home")} />
       )}
 
       {/* ——— ADMIN ——— */}
