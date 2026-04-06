@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { quiniela as quinielaApi, auth } from "./services/api.js";
+import { quiniela as quinielaApi, auth, loadTokenFromStorage, touchActivity, INACTIVITY_MS } from "./services/api.js";
 import Navbar from "./components/Navbar";
 import ResultsBar from "./components/ResultsBar";
 import Hero from "./components/Hero";
@@ -62,6 +62,50 @@ export default function App() {
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // ── Restaurar sesión al recargar + auto-logout por inactividad ───────────────
+  useEffect(() => {
+    // 1. Intentar recuperar token guardado
+    const savedToken = loadTokenFromStorage();
+    if (savedToken) {
+      // Token válido y dentro del período de inactividad → recuperar perfil
+      auth.me()
+        .then((data) => {
+          setCurrentUser(data.usuario);
+          loadSavedQuiniela();
+        })
+        .catch(() => {
+          // Token inválido o expirado en el servidor → limpiar
+          auth.logout();
+          setCurrentUser(null);
+        });
+    }
+
+    // 2. Detectar actividad del usuario para resetear el timer
+    const EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+    const onActivity = () => touchActivity();
+    EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
+
+    // 3. Verificar inactividad cada minuto
+    const interval = setInterval(() => {
+      const lastActivity = parseInt(localStorage.getItem("ch_last_activity") || "0", 10);
+      if (lastActivity && (Date.now() - lastActivity) >= INACTIVITY_MS) {
+        // Sesión expirada por inactividad
+        auth.logout();
+        setCurrentUser(null);
+        setScorePredictions({});
+        setSavedOk(false);
+        setSaveError("");
+        setReadOnly(false);
+      }
+    }, 60_000); // revisar cada 60 segundos
+
+    return () => {
+      EVENTS.forEach((e) => window.removeEventListener(e, onActivity));
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ——— Cargar datos del Mundial ———

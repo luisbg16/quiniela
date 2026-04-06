@@ -5,13 +5,59 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
-// ─── Token JWT en memoria ─────────────────────────────────────────────────────
-// (no usamos localStorage — se pierde al recargar, es intencional por seguridad)
+// ─── Token JWT con persistencia en localStorage ───────────────────────────────
+// Se guarda en localStorage para sobrevivir recargas.
+// Auto-expira si el usuario lleva más de INACTIVITY_MS sin usar la app.
+
+const TOKEN_KEY    = "ch_token";
+const ACTIVITY_KEY = "ch_last_activity";
+export const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutos
+
 let _token = null;
 
-export function setToken(token) { _token = token; }
-export function getToken()      { return _token; }
-export function clearToken()    { _token = null; }
+export function setToken(token) {
+  _token = token;
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now()));
+  } catch { /* incógnito o storage lleno */ }
+}
+
+export function getToken() { return _token; }
+
+export function clearToken() {
+  _token = null;
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACTIVITY_KEY);
+  } catch {}
+}
+
+/** Actualiza el timestamp de última actividad (llamar en cada interacción) */
+export function touchActivity() {
+  try { localStorage.setItem(ACTIVITY_KEY, String(Date.now())); } catch {}
+}
+
+/**
+ * Intenta restaurar el token desde localStorage.
+ * Devuelve el token si aún está dentro del período de inactividad, o null si expiró.
+ */
+export function loadTokenFromStorage() {
+  try {
+    const token       = localStorage.getItem(TOKEN_KEY);
+    const lastActivity = parseInt(localStorage.getItem(ACTIVITY_KEY) || "0", 10);
+    if (token && (Date.now() - lastActivity) < INACTIVITY_MS) {
+      _token = token;
+      return token;
+    }
+    // Expiró por inactividad — limpiar
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACTIVITY_KEY);
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // ─── Fetch base con headers automáticos ──────────────────────────────────────
 
@@ -80,7 +126,7 @@ export const auth = {
     return request(`/auth/verificar-afiliado?dni=${encodeURIComponent(dni)}`);
   },
 
-  /** Cerrar sesión (solo limpia el token en memoria) */
+  /** Cerrar sesión — limpia token de memoria y localStorage */
   logout() {
     clearToken();
   },
