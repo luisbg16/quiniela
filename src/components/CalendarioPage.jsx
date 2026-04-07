@@ -279,11 +279,12 @@ function SaveBar({ currentUser, savedOk, saveError, onSave, onLogin, onDismissSa
 
 // ─── Vista de ronda eliminatoria ──────────────────────────────────────────────
 
-function RondaView({ rondaKey, bracket, scorePredictions, onScoreChange, readOnly }) {
+function RondaView({ rondaKey, bracket, scorePredictions, onScoreChange, readOnly, oficialResultados, partidosConfigMap }) {
   if (!bracket) return <PendienteMsg />;
 
   if (rondaKey === "r32") return (
-    <R32View bracket={bracket} scorePredictions={scorePredictions} onScoreChange={onScoreChange} readOnly={readOnly} />
+    <R32View bracket={bracket} scorePredictions={scorePredictions} onScoreChange={onScoreChange} readOnly={readOnly}
+      oficialResultados={oficialResultados} partidosConfigMap={partidosConfigMap} />
   );
 
   const fixtures = RONDA_FIXTURES[rondaKey] ?? [];
@@ -307,6 +308,8 @@ function RondaView({ rondaKey, bracket, scorePredictions, onScoreChange, readOnl
             prediction={scorePredictions?.[m.id]}
             onPredictionChange={onScoreChange}
             readOnly={readOnly}
+            adminClosed={partidosConfigMap?.[m.id] === false}
+            officialResult={oficialResultados?.[m.id] ?? null}
           />
         ))}
         {rondaKey === "tp" && bracket?.tercero && (
@@ -340,6 +343,8 @@ function RondaView({ rondaKey, bracket, scorePredictions, onScoreChange, readOnl
           prediction={scorePredictions?.[m.id]}
           onPredictionChange={onScoreChange}
           readOnly={readOnly}
+          adminClosed={partidosConfigMap?.[m.id] === false}
+          officialResult={oficialResultados?.[m.id] ?? null}
         />
       ))}
     </div>
@@ -445,28 +450,60 @@ const RONDA_FIXTURES = {
   ],
 };
 
-function StaticCard({ match, adminA, adminB, prediction, onPredictionChange, readOnly = false }) {
-  const hasTeams     = adminA || adminB;
+function StaticCard({ match, adminA, adminB, prediction, onPredictionChange, readOnly = false, adminClosed = false, officialResult = null }) {
+  const hasTeams      = !!(adminA || adminB);
   const hasPredValues = prediction?.home != null || prediction?.away != null;
   // Mostrar inputs si hay equipos definidos O si ya hay valores guardados
   const showInputs = hasTeams || hasPredValues;
-  // Solo permitir edición si hay equipos y no es readOnly
-  const canEdit = !readOnly && hasTeams;
+  // Bloquear si: sin equipos, readOnly global, cerrado por admin, o ya hay resultado oficial
+  const isLocked = !hasTeams || readOnly || adminClosed || !!officialResult;
+  const canEdit  = !isLocked;
   const predH = prediction?.home ?? null;
   const predA = prediction?.away ?? null;
+  const pts   = (officialResult && hasPredValues) ? calcPuntos(prediction, officialResult) : null;
+
+  const PTS_COLOR = pts === 3 ? "#2e7d32" : pts === 1 ? "#f57c00" : pts === 0 ? "#c62828" : "#8097c0";
+  const PTS_BG    = pts === 3 ? "#e8f5e9" : pts === 1 ? "#fff3e0" : pts === 0 ? "#ffebee" : "#f0f3fa";
+
+  const borderColor = officialResult ? "#c5d5f0" : adminClosed ? "#ffcdd2" : "#dce7f7";
+
   return (
-    <div style={{ background: "white", borderRadius: "12px", border: "1px solid #dce7f7", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,48,128,0.06)" }}>
-      {/* Header: match id + fecha */}
-      <div style={{ background: "#eef2fa", borderBottom: "1px solid #dce7f7", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{
+      background: "white", borderRadius: "12px",
+      border: `1px solid ${borderColor}`,
+      borderLeft: adminClosed && !officialResult ? "4px solid #ef9a9a" : undefined,
+      overflow: "hidden", boxShadow: "0 2px 8px rgba(0,48,128,0.06)",
+    }}>
+      {/* Header: match id + fecha + badges */}
+      <div style={{ background: officialResult ? "#e8f5e9" : adminClosed ? "#fff3f3" : "#eef2fa", borderBottom: `1px solid ${borderColor}`, padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
         <span style={{ fontSize: "9px", fontWeight: "700", color: "#8097c0", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Barlow Condensed', sans-serif" }}>
           {match.label || match.id}
         </span>
-        {match.fecha && (
-          <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif", fontWeight: "500" }}>
-            {match.fecha}
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          {/* Resultado oficial */}
+          {officialResult && (
+            <span style={{ fontSize: "10px", fontWeight: "800", color: "#1b5e20", background: "#c8e6c9", borderRadius: "6px", padding: "1px 7px", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.5px" }}>
+              {officialResult.goles_local}–{officialResult.goles_vis} oficial
+            </span>
+          )}
+          {/* Puntos ganados */}
+          {pts !== null && (
+            <span style={{ fontSize: "10px", fontWeight: "800", color: PTS_COLOR, background: PTS_BG, borderRadius: "6px", padding: "1px 7px", fontFamily: "'Barlow Condensed', sans-serif" }}>
+              {pts === 3 ? "✓ +3 pts" : pts === 1 ? "~ +1 pt" : "✗ 0 pts"}
+            </span>
+          )}
+          {/* Cerrado por admin (sin resultado todavía) */}
+          {adminClosed && !officialResult && (
+            <span style={{ fontSize: "9px", fontWeight: "700", color: "#c62828", fontFamily: "'Barlow Condensed', sans-serif" }}>🔒 Cerrado</span>
+          )}
+          {match.fecha && (
+            <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif", fontWeight: "500" }}>
+              {match.fecha}
+            </span>
+          )}
+        </div>
       </div>
+
       {/* Equipos + inputs de predicción */}
       <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
         {/* Fila equipo A */}
@@ -498,6 +535,7 @@ function StaticCard({ match, adminA, adminB, prediction, onPredictionChange, rea
           )}
         </div>
       </div>
+
       {/* Footer: hora + estadio */}
       {(match.hora || match.estadio) && (
         <div style={{ background: "#f8f9fd", borderTop: "1px solid #eef2fa", padding: "5px 14px", display: "flex", gap: "6px", alignItems: "center" }}>
@@ -518,7 +556,7 @@ function StaticCard({ match, adminA, adminB, prediction, onPredictionChange, rea
   );
 }
 
-function R32View({ bracket, scorePredictions, onScoreChange, readOnly }) {
+function R32View({ bracket, scorePredictions, onScoreChange, readOnly, oficialResultados, partidosConfigMap }) {
   const lSlots = bracket?.L?.r32 ?? [];
   const rSlots = bracket?.R?.r32 ?? [];
   const allSlots = [...lSlots, ...rSlots];
@@ -531,6 +569,8 @@ function R32View({ bracket, scorePredictions, onScoreChange, readOnly }) {
           prediction={scorePredictions?.[m.id]}
           onPredictionChange={onScoreChange}
           readOnly={readOnly}
+          adminClosed={partidosConfigMap?.[m.id] === false}
+          officialResult={oficialResultados?.[m.id] ?? null}
         />
       ))}
     </div>
@@ -755,6 +795,8 @@ export default function CalendarioPage({
                 scorePredictions={scorePredictions}
                 onScoreChange={onScoreChange}
                 readOnly={readOnly}
+                oficialResultados={oficialResultados}
+                partidosConfigMap={partidosConfigMap}
               />
             )}
           </div>
