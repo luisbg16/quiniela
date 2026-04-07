@@ -870,6 +870,38 @@ function Paginador({ page, total, pageSize, onPage }) {
   );
 }
 
+function descargarCSV(usuarios) {
+  const encabezados = ["#", "Nombre", "Apellido", "Email", "N° Afiliado", "Teléfono", "Afiliado", "Admin", "Puntos", "Fecha Registro"];
+  const escapar = (val) => {
+    const s = val == null ? "" : String(val);
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const filas = usuarios.map((u, i) => [
+    i + 1,
+    u.nombre ?? "",
+    u.apellido ?? "",
+    u.email ?? "",
+    u.numero_asociado ?? "",
+    u.telefono ?? "",
+    u.es_afiliado ? "Sí" : "No",
+    u.es_admin ? "Sí" : "No",
+    u.puntaje ?? 0,
+    u.fecha_registro ? new Date(u.fecha_registro).toLocaleDateString("es-HN") : "",
+  ].map(escapar).join(","));
+
+  const bom = "\uFEFF"; // BOM para que Excel reconozca UTF-8
+  const csv = bom + [encabezados.join(","), ...filas].join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const fecha = new Date().toISOString().slice(0, 10);
+  link.download = `usuarios_quiniela_${fecha}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function SeccionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -902,7 +934,21 @@ function SeccionUsuarios() {
 
   return (
     <div>
-      <h3 style={styles.sectionTitle}>Usuarios Registrados ({usuarios.length})</h3>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Usuarios Registrados ({usuarios.length})</h3>
+        <button
+          type="button"
+          onClick={() => descargarCSV(usuarios)}
+          disabled={usuarios.length === 0}
+          style={{
+            ...styles.saveBtn,
+            padding: "8px 16px", fontSize: "12px",
+            background: "#1b5e20", display: "flex", alignItems: "center", gap: "6px",
+          }}
+        >
+          ⬇ Descargar Excel ({usuarios.length})
+        </button>
+      </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
           <thead>
