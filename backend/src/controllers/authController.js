@@ -300,7 +300,7 @@ export async function olvideMiPassword(req, res) {
 
     // Enviar email con Resend
     await resend.emails.send({
-      from: "La Jugada Ganadora <noreply@chorotega.hn>",
+      from: "La Jugada Ganadora <onboarding@resend.dev>",
       to:   email.toLowerCase().trim(),
       subject: "Recuperá tu contraseña — La Jugada Ganadora Chorotega",
       html: `
