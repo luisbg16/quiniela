@@ -451,12 +451,11 @@ const RONDA_FIXTURES = {
 };
 
 function StaticCard({ match, adminA, adminB, prediction, onPredictionChange, readOnly = false, adminClosed = false, officialResult = null }) {
-  const hasTeams      = !!(adminA || adminB);
   const hasPredValues = prediction?.home != null || prediction?.away != null;
-  // Mostrar inputs si hay equipos definidos O si ya hay valores guardados
-  const showInputs = hasTeams || hasPredValues;
-  // Bloquear si: sin equipos, readOnly global, cerrado por admin, o ya hay resultado oficial
-  const isLocked = !hasTeams || readOnly || adminClosed || !!officialResult;
+  // Siempre mostrar inputs — los usuarios pueden predecir aunque los equipos no estén asignados aún
+  const showInputs = true;
+  // Bloquear solo por: readOnly global, cerrado por admin, o resultado oficial ya guardado
+  const isLocked = readOnly || adminClosed || !!officialResult;
   const canEdit  = !isLocked;
   const predH = prediction?.home ?? null;
   const predA = prediction?.away ?? null;

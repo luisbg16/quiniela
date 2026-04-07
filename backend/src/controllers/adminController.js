@@ -149,12 +149,19 @@ export async function obtenerBracketOficial(req, res) {
 // ─── Recalcular puntajes de TODAS las quinielas ───────────────────────────────
 export async function calcularTodosPuntos(req, res) {
   try {
-    // Obtener resultados oficiales
+    // Obtener resultados oficiales (grupos + eliminatorios)
     const resOficiales = await pool.query(
-      "SELECT partido_id, goles_local, goles_vis FROM resultados_oficiales"
+      "SELECT partido_id, goles_local, goles_vis, fase FROM resultados_oficiales"
     );
     const resultadosMap = {};
     resOficiales.rows.forEach((r) => { resultadosMap[r.partido_id] = r; });
+
+    const totalResultados = Object.keys(resultadosMap).length;
+    const resultadosGrupos = Object.values(resultadosMap).filter(r => r.fase === "grupos").length;
+    const resultadosElim   = totalResultados - resultadosGrupos;
+
+    console.log(`[calcularPuntos] Resultados encontrados: ${totalResultados} (${resultadosGrupos} grupos, ${resultadosElim} eliminatorios)`);
+    console.log(`[calcularPuntos] IDs en resultados:`, Object.keys(resultadosMap).join(", "));
 
     // Obtener bracket oficial
     const bracketRow = await pool.query("SELECT datos FROM bracket_oficial LIMIT 1");
@@ -164,15 +171,27 @@ export async function calcularTodosPuntos(req, res) {
     const quinielas = await pool.query("SELECT id, predicciones FROM quinielas");
 
     let actualizadas = 0;
+    const detalle = [];
+
     for (const q of quinielas.rows) {
       const pts = calcularPuntaje(q.predicciones, resultadosMap, bracketOficial);
       await pool.query("UPDATE quinielas SET puntaje = $1 WHERE id = $2", [pts, q.id]);
+
+      // Diagnóstico: qué partidos tenía predichos
+      const scoreKeys = Object.keys(q.predicciones?.scores ?? {});
+      const matcheados = scoreKeys.filter(k => resultadosMap[k]);
+      detalle.push({ quiniela_id: q.id, puntaje: pts, predicciones_total: scoreKeys.length, matcheadas_con_resultado: matcheados.length });
+
       actualizadas++;
     }
+
+    console.log(`[calcularPuntos] Detalle por quiniela:`, JSON.stringify(detalle));
 
     return res.json({
       mensaje: `Puntos recalculados para ${actualizadas} quinielas`,
       actualizadas,
+      resultados_en_db: { total: totalResultados, grupos: resultadosGrupos, eliminatorios: resultadosElim },
+      detalle_quinielas: detalle,
     });
   } catch (err) {
     console.error("Error calcularTodosPuntos:", err);
