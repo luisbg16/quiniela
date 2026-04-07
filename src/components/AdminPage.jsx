@@ -178,6 +178,177 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
 }
 
 // ══════════════════════════════════════════════════════════
+// SECCIÓN: RESULTADOS ELIMINATORIOS (M73–M104)
+// ══════════════════════════════════════════════════════════
+
+const ELIMINATORIOS = [
+  {
+    ronda: "16avos de Final", fase: "r32",
+    partidos: [
+      { id: "M73", local: "2° Grupo A",         vis: "2° Grupo B",           fecha: "Dom 28 jun", estadio: "Los Ángeles" },
+      { id: "M74", local: "1° Grupo C",         vis: "2° Grupo F",           fecha: "Lun 29 jun", estadio: "Houston" },
+      { id: "M75", local: "1° Grupo E",         vis: "3° mejor A·B·C·D·F",   fecha: "Lun 29 jun", estadio: "Boston" },
+      { id: "M76", local: "1° Grupo F",         vis: "2° Grupo C",           fecha: "Lun 29 jun", estadio: "Monterrey" },
+      { id: "M77", local: "2° Grupo E",         vis: "2° Grupo I",           fecha: "Mar 30 jun", estadio: "Dallas" },
+      { id: "M78", local: "1° Grupo I",         vis: "3° mejor C·D·F·G·H",   fecha: "Mar 30 jun", estadio: "Nueva York" },
+      { id: "M79", local: "1° Grupo A",         vis: "3° mejor C·E·F·H·I",   fecha: "Mar 30 jun", estadio: "Ciudad de México" },
+      { id: "M80", local: "1° Grupo L",         vis: "3° mejor E·H·J·K",     fecha: "Mié 1 jul",  estadio: "Atlanta" },
+      { id: "M81", local: "2° Grupo G",         vis: "2° Grupo H",           fecha: "Mié 1 jul",  estadio: "Seattle" },
+      { id: "M82", local: "1° Grupo D",         vis: "2° Grupo K",           fecha: "Mié 1 jul",  estadio: "Vancouver" },
+      { id: "M83", local: "1° Grupo B",         vis: "3° mejor G·H·I·J·K",   fecha: "Jue 2 jul",  estadio: "Guadalajara" },
+      { id: "M84", local: "1° Grupo K",         vis: "2° Grupo L",           fecha: "Jue 2 jul",  estadio: "Kansas City" },
+      { id: "M85", local: "2° Grupo D",         vis: "2° Grupo J",           fecha: "Jue 2 jul",  estadio: "Miami" },
+      { id: "M86", local: "1° Grupo J",         vis: "3° mejor A·B·D·E·G",   fecha: "Vie 3 jul",  estadio: "San Francisco" },
+      { id: "M87", local: "1° Grupo G",         vis: "2° Grupo E·F·K·L",     fecha: "Vie 3 jul",  estadio: "Toronto" },
+      { id: "M88", local: "1° Grupo H",         vis: "2° Grupo G",           fecha: "Vie 3 jul",  estadio: "Monterrey" },
+    ],
+  },
+  {
+    ronda: "Octavos de Final", fase: "r16",
+    partidos: [
+      { id: "M89", local: "W73", vis: "W75", fecha: "Sáb 4 jul",  estadio: "Houston" },
+      { id: "M90", local: "W74", vis: "W77", fecha: "Sáb 4 jul",  estadio: "Filadelfia" },
+      { id: "M91", local: "W76", vis: "W78", fecha: "Dom 5 jul",  estadio: "Nueva York" },
+      { id: "M92", local: "W79", vis: "W80", fecha: "Dom 5 jul",  estadio: "Ciudad de México" },
+      { id: "M93", local: "W81", vis: "W83", fecha: "Lun 6 jul",  estadio: "Dallas" },
+      { id: "M94", local: "W82", vis: "W85", fecha: "Lun 6 jul",  estadio: "Los Ángeles" },
+      { id: "M95", local: "W84", vis: "W86", fecha: "Mar 7 jul",  estadio: "Seattle" },
+      { id: "M96", local: "W87", vis: "W88", fecha: "Mar 7 jul",  estadio: "Miami" },
+    ],
+  },
+  {
+    ronda: "Cuartos de Final", fase: "qf",
+    partidos: [
+      { id: "M97",  local: "W89", vis: "W90", fecha: "Jue 9 jul",  estadio: "Boston" },
+      { id: "M98",  local: "W93", vis: "W94", fecha: "Vie 10 jul", estadio: "Los Ángeles" },
+      { id: "M99",  local: "W91", vis: "W92", fecha: "Sáb 11 jul", estadio: "Dallas" },
+      { id: "M100", local: "W95", vis: "W96", fecha: "Sáb 11 jul", estadio: "Seattle" },
+    ],
+  },
+  {
+    ronda: "Semifinales", fase: "sf",
+    partidos: [
+      { id: "M101", local: "W97",  vis: "W98",  fecha: "Mar 14 jul", estadio: "Dallas" },
+      { id: "M102", local: "W99",  vis: "W100", fecha: "Mié 15 jul", estadio: "Nueva York" },
+    ],
+  },
+  {
+    ronda: "Tercer Puesto", fase: "tp",
+    partidos: [
+      { id: "M103", local: "RU101", vis: "RU102", fecha: "Sáb 18 jul", estadio: "Miami" },
+    ],
+  },
+  {
+    ronda: "Gran Final", fase: "f",
+    partidos: [
+      { id: "M104", local: "W101", vis: "W102", fecha: "Dom 19 jul", estadio: "Nueva York" },
+    ],
+  },
+];
+
+function SeccionResultadosEliminatorios({ resultadosOficiales, onSave }) {
+  const [local,    setLocal]    = useState({});
+  const [saved,    setSaved]    = useState({});
+  const [loading,  setLoading]  = useState({});
+  const [config,   setConfig]   = useState({});
+  const [toggling, setToggling] = useState({});
+  const [error,    setError]    = useState("");
+
+  useEffect(() => {
+    const init = {};
+    Object.entries(resultadosOficiales).forEach(([id, r]) => {
+      init[id] = { h: r.goles_local, a: r.goles_vis };
+    });
+    setLocal(init);
+    setSaved(Object.fromEntries(Object.keys(resultadosOficiales).map((id) => [id, true])));
+  }, [resultadosOficiales]);
+
+  useEffect(() => {
+    partidosConfigApi.obtener()
+      .then((d) => setConfig(d.config ?? {}))
+      .catch(() => {});
+  }, []);
+
+  const handleChange = (id, side, val) => {
+    setLocal((prev) => ({ ...prev, [id]: { ...prev[id], [side]: val } }));
+    setSaved((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const handleToggleEstado = async (id, abierto) => {
+    setToggling((prev) => ({ ...prev, [id]: true }));
+    try {
+      await partidosConfigApi.toggle({ partidoId: id, abierto });
+      setConfig((prev) => ({ ...prev, [id]: abierto }));
+    } catch (e) { setError(e.message); }
+    finally { setToggling((prev) => ({ ...prev, [id]: false })); }
+  };
+
+  const handleSave = async (id, fase) => {
+    const { h, a } = local[id] ?? {};
+    if (h == null || a == null) { setError("Ingresá ambos goles"); return; }
+    setError("");
+    setLoading((prev) => ({ ...prev, [id]: true }));
+    try {
+      await adminApi.guardarResultado({ partidoId: id, golesLocal: h, golesVis: a, fase });
+      setSaved((prev) => ({ ...prev, [id]: true }));
+      await partidosConfigApi.toggle({ partidoId: id, abierto: false });
+      setConfig((prev) => ({ ...prev, [id]: false }));
+      onSave();
+    } catch (e) { setError(e.message); }
+    finally { setLoading((prev) => ({ ...prev, [id]: false })); }
+  };
+
+  return (
+    <div>
+      <h3 style={styles.sectionTitle}>Resultados — Fase Eliminatoria</h3>
+      {error && <p style={styles.errorMsg}>{error}</p>}
+      {ELIMINATORIOS.map(({ ronda, fase, partidos }) => (
+        <div key={fase} style={{ marginBottom: "24px" }}>
+          <div style={styles.groupHeader}>{ronda}</div>
+          {partidos.map((m) => {
+            const abierto = config[m.id] !== false;
+            const tog = toggling[m.id];
+            const row = local[m.id] ?? { h: null, a: null };
+            return (
+              <div key={m.id} style={{
+                ...styles.matchRow,
+                borderLeft: `4px solid ${abierto ? "#c8e6c9" : "#ffcdd2"}`,
+                background: abierto ? "#fafffe" : "#fff8f8",
+              }}>
+                <span style={{ ...styles.teamName, fontSize: "11px", color: "#8097c0", minWidth: "40px", flex: "none" }}>{m.id}</span>
+                <span style={{ ...styles.teamName, fontSize: "11px" }}>{m.local}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <ScoreInput value={row.h} onChange={(v) => handleChange(m.id, "h", v)} disabled={loading[m.id]} />
+                  <span style={{ fontWeight: "900", color: "#8097c0" }}>–</span>
+                  <ScoreInput value={row.a} onChange={(v) => handleChange(m.id, "a", v)} disabled={loading[m.id]} />
+                </div>
+                <span style={{ ...styles.teamName, fontSize: "11px" }}>{m.vis}</span>
+                <span style={{ fontSize: "10px", color: "#a8b8d8", whiteSpace: "nowrap" }}>{m.fecha} · {m.estadio}</span>
+                <button type="button" onClick={() => handleSave(m.id, fase)} disabled={loading[m.id]} style={styles.saveBtn}>
+                  {loading[m.id] ? "..." : "Guardar"}
+                </button>
+                <StatusBadge saved={saved[m.id]} />
+                <span style={{
+                  fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "10px",
+                  background: abierto ? "#e8f5e9" : "#ffebee",
+                  color: abierto ? "#2e7d32" : "#c62828", whiteSpace: "nowrap",
+                }}>
+                  {abierto ? "🔓 Abierto" : "🔒 Cerrado"}
+                </span>
+                <button type="button" disabled={tog || loading[m.id]} onClick={() => handleToggleEstado(m.id, !abierto)}
+                  style={{ ...styles.saveBtn, padding: "4px 10px", fontSize: "10px", background: abierto ? "#d32f2f" : "#2e7d32", color: "white" }}>
+                  {tog ? "…" : abierto ? "Cerrar" : "Abrir"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
 // SECCIÓN: BRACKET OFICIAL (equipos clasificados)
 // ══════════════════════════════════════════════════════════
 
@@ -667,6 +838,7 @@ const TABS = [
 
 export default function AdminPage({ onBack }) {
   const [tab, setTab] = useState("resultados");
+  const [resultadosTab, setResultadosTab] = useState("grupos");
   const [resultadosOficiales, setResultadosOficiales] = useState({});
   const [bracketOficial, setBracketOficial] = useState({});
   const [calculando, setCalculando] = useState(false);
@@ -743,10 +915,42 @@ export default function AdminPage({ onBack }) {
       {/* Contenido */}
       <div style={{ background: "white", borderRadius: "12px", padding: "24px", border: "1px solid var(--ch-border)", boxShadow: "0 2px 10px rgba(10,36,100,0.06)" }}>
         {tab === "resultados" && (
-          <SeccionResultadosGrupos
-            resultadosOficiales={resultadosOficiales}
-            onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
-          />
+          <>
+            {/* Sub-tabs: Grupos / Eliminatorios */}
+            <div style={{ display: "flex", gap: "2px", marginBottom: "20px", borderBottom: "2px solid #e8ecf5" }}>
+              {[{ key: "grupos", label: "Fase de Grupos" }, { key: "eliminatorios", label: "Fase Eliminatoria" }].map(({ key, label }) => (
+                <button
+                  key={key} type="button"
+                  onClick={() => setResultadosTab(key)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "8px 16px",
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: "700", fontSize: "13px", letterSpacing: "0.3px",
+                    color: resultadosTab === key ? "#005aba" : "#8097c0",
+                    borderBottom: `3px solid ${resultadosTab === key ? "#005aba" : "transparent"}`,
+                    marginBottom: "-2px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {resultadosTab === "grupos" && (
+              <SeccionResultadosGrupos
+                resultadosOficiales={resultadosOficiales}
+                onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
+              />
+            )}
+            {resultadosTab === "eliminatorios" && (
+              <SeccionResultadosEliminatorios
+                resultadosOficiales={resultadosOficiales}
+                onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
+              />
+            )}
+          </>
         )}
         {tab === "bracket" && (
           <SeccionBracketOficial
