@@ -299,7 +299,7 @@ export async function olvideMiPassword(req, res) {
     const resetLink   = `${frontendUrl}/#reset?token=${token}`;
 
     // Enviar email con Resend
-    await resend.emails.send({
+    const resendResult = await resend.emails.send({
       from: "La Jugada Ganadora <onboarding@resend.dev>",
       to:   email.toLowerCase().trim(),
       subject: "Recuperá tu contraseña — La Jugada Ganadora Chorotega",
@@ -325,6 +325,7 @@ export async function olvideMiPassword(req, res) {
       `,
     });
 
+    console.log("Resend result:", JSON.stringify(resendResult));
     return res.json({ mensaje: "Si el email está registrado, recibirás un enlace en breve" });
   } catch (err) {
     console.error("Error olvideMiPassword:", err);
