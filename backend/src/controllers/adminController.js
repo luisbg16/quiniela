@@ -71,6 +71,16 @@ export async function guardarResultado(req, res) {
       return res.status(400).json({ error: "Los goles no pueden ser negativos" });
     }
 
+    // Verificar si el partido está cerrado (abierto = false en partidos_config)
+    const cfg = await pool.query(
+      "SELECT abierto FROM partidos_config WHERE partido_id = $1",
+      [String(partidoId)]
+    );
+    // Si existe registro Y está cerrado → rechazar
+    if (cfg.rows.length > 0 && cfg.rows[0].abierto === false) {
+      return res.status(403).json({ error: `El partido ${partidoId} está cerrado. Primero abrilo desde el panel admin.` });
+    }
+
     await pool.query(
       `INSERT INTO resultados_oficiales (partido_id, goles_local, goles_vis, fase)
        VALUES ($1, $2, $3, $4)

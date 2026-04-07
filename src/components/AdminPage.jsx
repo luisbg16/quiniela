@@ -131,16 +131,16 @@ function SeccionResultadosGrupos({ resultadosOficiales, onSave }) {
                 }}>
                   <span style={styles.teamName}>{m.local?.nombre}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <ScoreInput value={row.h} onChange={(v) => handleChange(id, "h", v)} disabled={loading[id]} />
+                    <ScoreInput value={row.h} onChange={(v) => handleChange(id, "h", v)} disabled={loading[id] || !abierto} />
                     <span style={{ fontWeight: "900", color: "#8097c0" }}>–</span>
-                    <ScoreInput value={row.a} onChange={(v) => handleChange(id, "a", v)} disabled={loading[id]} />
+                    <ScoreInput value={row.a} onChange={(v) => handleChange(id, "a", v)} disabled={loading[id] || !abierto} />
                   </div>
                   <span style={styles.teamName}>{m.visitante?.nombre}</span>
                   <button
                     type="button"
                     onClick={() => handleSave(m)}
-                    disabled={loading[id]}
-                    style={styles.saveBtn}
+                    disabled={loading[id] || !abierto}
+                    style={{ ...styles.saveBtn, opacity: !abierto ? 0.4 : 1, cursor: !abierto ? "not-allowed" : "pointer" }}
                   >
                     {loading[id] ? "..." : "Guardar"}
                   </button>
@@ -520,12 +520,12 @@ function AdminMatchCard({
           <span style={{ fontSize: "10px", color: "#8097c0", fontFamily: "'Inter', sans-serif", fontWeight: "600" }}>
             Resultado:
           </span>
-          <ScoreInput value={scoreH} onChange={onScoreHChange} disabled={savingScore} />
+          <ScoreInput value={scoreH} onChange={onScoreHChange} disabled={savingScore || abierto === false} />
           <span style={{ fontWeight: "900", color: "#8097c0", fontSize: "13px" }}>–</span>
-          <ScoreInput value={scoreA} onChange={onScoreAChange} disabled={savingScore} />
+          <ScoreInput value={scoreA} onChange={onScoreAChange} disabled={savingScore || abierto === false} />
           <button
-            type="button" onClick={onSaveScore} disabled={savingScore}
-            style={{ ...styles.saveBtn, padding: "4px 12px", fontSize: "11px" }}
+            type="button" onClick={onSaveScore} disabled={savingScore || abierto === false}
+            style={{ ...styles.saveBtn, padding: "4px 12px", fontSize: "11px", opacity: abierto === false ? 0.4 : 1, cursor: abierto === false ? "not-allowed" : "pointer" }}
           >
             {savingScore ? "..." : "Guardar"}
           </button>
