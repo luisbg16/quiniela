@@ -325,7 +325,7 @@ export default function Bracket({
 
   const allSF  = [leftSF[0], rightSF[0]];
   const allSFpicks = (i) => i === 0 ? (lPicks.sf[0] ?? null) : (rPicks.sf[0] ?? null);
-  const onPickSF = (i, v) => i === 0 ? pickLeft("sf", i, v) : pickRight("sf", i, v);
+  const onPickSF = (i, v) => i === 0 ? pickLeft("sf", 0, v) : pickRight("sf", 0, v);
 
   // Labels de partidos R32 (A-F izq, G-L der)
   const r32Labels = [

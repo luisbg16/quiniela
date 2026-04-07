@@ -106,15 +106,16 @@ export default function CondicionesPage({ onBack }) {
         <Section title="7. Selección del ganador">
           Se seleccionarán los participantes que acumulen el mínimo de 60 puntos y cumplan los requisitos
           de elegibilidad. Entre ellos, con la base de datos, se realizará un sorteo aleatorio de forma
-          electrónica para elegir al ganador del premio. La decisión del sorteo es definitiva e inapelable.
+          electrónica para elegir al ganador del premio. La decisión del sorteo es definitiva e inapelable.{" "}
+          <strong>El sorteo se realizará el viernes 24 de julio del presente año, con la base de datos de los participantes.</strong>
         </Section>
 
         <Section title="8. Premios">
           Se sortearán los siguientes premios entre los participantes elegibles:
           <ul style={{ margin: "10px 0 0 16px", padding: 0, lineHeight: 2 }}>
-            <li><strong>1.er lugar:</strong> Sofá reclinable</li>
-            <li><strong>2.do lugar:</strong> Smart TV 70&quot; Samsung</li>
-            <li><strong>3.er lugar:</strong> Camiseta oficial y balón del Mundial 2026</li>
+            <li><strong>Primer premio:</strong> Sofá reclinable</li>
+            <li><strong>Segundo premio:</strong> Smart TV 70&quot; Samsung</li>
+            <li><strong>Tercer premio:</strong> Camiseta oficial y balón del Mundial 2026</li>
           </ul>
           Los premios no son negociables ni canjeables por dinero en efectivo y tampoco son transferibles
           a terceras personas. La Cooperativa se reserva el derecho de modificar los premios según la
