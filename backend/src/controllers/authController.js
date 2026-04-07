@@ -1,10 +1,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import pool from "../config/database.js";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 // ─── Webservice de verificación de afiliados (Laravel/Chorotega) ─────────────
 //
@@ -298,9 +304,9 @@ export async function olvideMiPassword(req, res) {
     const frontendUrl = process.env.FRONTEND_URL || "https://quiniela-nu.vercel.app";
     const resetLink   = `${frontendUrl}/#reset?token=${token}`;
 
-    // Enviar email con Resend
-    const resendResult = await resend.emails.send({
-      from: "La Jugada Ganadora <onboarding@resend.dev>",
+    // Enviar email con Nodemailer + Gmail
+    await transporter.sendMail({
+      from: `"La Jugada Ganadora" <${process.env.GMAIL_USER}>`,
       to:   email.toLowerCase().trim(),
       subject: "Recuperá tu contraseña — La Jugada Ganadora Chorotega",
       html: `
@@ -325,7 +331,6 @@ export async function olvideMiPassword(req, res) {
       `,
     });
 
-    console.log("Resend result:", JSON.stringify(resendResult));
     return res.json({ mensaje: "Si el email está registrado, recibirás un enlace en breve" });
   } catch (err) {
     console.error("Error olvideMiPassword:", err);
