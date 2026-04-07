@@ -130,6 +130,22 @@ export const auth = {
   logout() {
     clearToken();
   },
+
+  /** Solicitar enlace de recuperación de contraseña */
+  async forgotPassword({ email }) {
+    return request("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  /** Establecer nueva contraseña con el token del email */
+  async resetPassword({ token, nuevaPassword }) {
+    return request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, nuevaPassword }),
+    });
+  },
 };
 
 // ─── Quiniela ─────────────────────────────────────────────────────────────────

@@ -90,10 +90,33 @@ CREATE TABLE IF NOT EXISTS partidos_config (
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ─── Tabla de tokens para recuperación de contraseña ────────────────────────
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          SERIAL PRIMARY KEY,
+  usuario_id  INTEGER      NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  token       VARCHAR(64)  NOT NULL UNIQUE,
+  expira_en   TIMESTAMPTZ  NOT NULL,
+  usado       BOOLEAN      DEFAULT FALSE,
+  created_at  TIMESTAMPTZ  DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_tokens(token);
+
 -- ─── Índices ─────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_quinielas_usuario_id ON quinielas(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_quinielas_puntaje    ON quinielas(puntaje DESC);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email       ON usuarios(email);
+
+-- Constraint: un solo registro por DNI (numero_asociado) — migración segura
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'uq_usuarios_numero_asociado'
+  ) THEN
+    ALTER TABLE usuarios
+      ADD CONSTRAINT uq_usuarios_numero_asociado UNIQUE (numero_asociado);
+  END IF;
+END$$;
 
 -- ─── Función para actualizar timestamps automáticamente ──────────────────────
 -- Actualiza fecha_actualizacion Y updated_at (compatibilidad con triggers heredados)

@@ -60,7 +60,7 @@ function ErrorBanner({ mensaje }) {
 // ——————————————————————————————————————————
 // FORMULARIO DE INICIO DE SESIÓN
 // ——————————————————————————————————————————
-function LoginForm({ onSuccess, onSwitch }) {
+function LoginForm({ onSuccess, onSwitch, onForgot }) {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
@@ -88,6 +88,19 @@ function LoginForm({ onSuccess, onSwitch }) {
         placeholder="tu@email.com" required />
       <Field label="Contraseña" type="password" value={password} onChange={setPassword}
         placeholder="••••••••" required />
+
+      <div style={{ textAlign: "right", marginTop: "-8px" }}>
+        <button
+          type="button" onClick={onForgot}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--ch-blue)", fontSize: "12px",
+            fontFamily: "'Inter', sans-serif", padding: 0,
+          }}
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+      </div>
 
       <ErrorBanner mensaje={error} />
 
@@ -121,6 +134,133 @@ function LoginForm({ onSuccess, onSwitch }) {
           Registrarse
         </button>
       </div>
+    </form>
+  );
+}
+
+// ——————————————————————————————————————————
+// FORMULARIO: OLVIDÉ MI CONTRASEÑA
+// ——————————————————————————————————————————
+function ForgotPasswordForm({ onBack }) {
+  const [email,   setEmail]   = useState("");
+  const [error,   setError]   = useState("");
+  const [ok,      setOk]      = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!email) { setError("Ingresá tu correo electrónico."); return; }
+    setLoading(true);
+    try {
+      await auth.forgotPassword({ email });
+      setOk(true);
+    } catch (err) {
+      setError(err.message || "Error al enviar el email. Intentá de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (ok) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "center" }}>
+      <div style={{ fontSize: "40px" }}>📬</div>
+      <p style={{ fontSize: "14px", color: "var(--ch-navy)", fontFamily: "'Inter', sans-serif", margin: 0 }}>
+        Si el correo está registrado, recibís un enlace para recuperar tu contraseña en los próximos minutos.
+      </p>
+      <button type="button" onClick={onBack}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ch-blue)", fontSize: "13px", fontFamily: "'Inter', sans-serif" }}>
+        ← Volver al inicio de sesión
+      </button>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <p style={{ fontSize: "13px", color: "var(--ch-text-muted)", fontFamily: "'Inter', sans-serif", margin: 0 }}>
+        Ingresá tu correo y te enviamos un enlace para restablecer tu contraseña.
+      </p>
+      <Field label="Correo electrónico" type="email" value={email} onChange={setEmail}
+        placeholder="tu@email.com" required />
+      <ErrorBanner mensaje={error} />
+      <button type="submit" disabled={loading}
+        style={{
+          background: loading ? "#90bce8" : "var(--ch-blue)",
+          color: "white", border: "none", borderRadius: "8px",
+          padding: "12px", fontSize: "14px", fontWeight: "700",
+          cursor: loading ? "not-allowed" : "pointer",
+          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.5px",
+        }}>
+        {loading ? "Enviando..." : "Enviar enlace"}
+      </button>
+      <button type="button" onClick={onBack}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ch-blue)", fontSize: "12px", fontFamily: "'Inter', sans-serif" }}>
+        ← Volver al inicio de sesión
+      </button>
+    </form>
+  );
+}
+
+// ——————————————————————————————————————————
+// FORMULARIO: RESTABLECER CONTRASEÑA (desde link del email)
+// ——————————————————————————————————————————
+function ResetPasswordForm({ token, onBack }) {
+  const [nuevaPassword,    setNuevaPassword]    = useState("");
+  const [confirmarPassword, setConfirmarPassword] = useState("");
+  const [error,   setError]   = useState("");
+  const [ok,      setOk]      = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!nuevaPassword || !confirmarPassword) { setError("Completá ambos campos."); return; }
+    if (nuevaPassword.length < 6) { setError("La contraseña debe tener al menos 6 caracteres."); return; }
+    if (nuevaPassword !== confirmarPassword) { setError("Las contraseñas no coinciden."); return; }
+    setLoading(true);
+    try {
+      await auth.resetPassword({ token, nuevaPassword });
+      setOk(true);
+    } catch (err) {
+      setError(err.message || "El enlace es inválido o ya expiró.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (ok) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "center" }}>
+      <div style={{ fontSize: "40px" }}>✅</div>
+      <p style={{ fontSize: "14px", color: "var(--ch-navy)", fontFamily: "'Inter', sans-serif", margin: 0 }}>
+        ¡Contraseña actualizada! Ya podés iniciar sesión con tu nueva contraseña.
+      </p>
+      <button type="button" onClick={onBack}
+        style={{ background: "var(--ch-blue)", color: "white", border: "none", borderRadius: "8px", padding: "10px", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: "700" }}>
+        Ir al inicio de sesión
+      </button>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <p style={{ fontSize: "13px", color: "var(--ch-text-muted)", fontFamily: "'Inter', sans-serif", margin: 0 }}>
+        Elegí una nueva contraseña para tu cuenta.
+      </p>
+      <Field label="Nueva contraseña" type="password" value={nuevaPassword} onChange={setNuevaPassword}
+        placeholder="Mínimo 6 caracteres" required />
+      <Field label="Confirmar contraseña" type="password" value={confirmarPassword} onChange={setConfirmarPassword}
+        placeholder="Repetí la contraseña" required />
+      <ErrorBanner mensaje={error} />
+      <button type="submit" disabled={loading}
+        style={{
+          background: loading ? "#90bce8" : "var(--ch-blue)",
+          color: "white", border: "none", borderRadius: "8px",
+          padding: "12px", fontSize: "14px", fontWeight: "700",
+          cursor: loading ? "not-allowed" : "pointer",
+          fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.5px",
+        }}>
+        {loading ? "Guardando..." : "Guardar nueva contraseña"}
+      </button>
     </form>
   );
 }
@@ -341,7 +481,22 @@ function RegisterForm({ onSuccess, onSwitch }) {
 // MODAL PRINCIPAL
 // ——————————————————————————————————————————
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
+  // tab: "login" | "register" | "forgot" | "reset"
   const [tab, setTab] = useState("login");
+  const [resetToken, setResetToken] = useState(null);
+
+  // Detectar token de reset en la URL: /#reset?token=xxxx
+  useEffect(() => {
+    const hash = window.location.hash; // ej: "#reset?token=abc123"
+    if (hash.startsWith("#reset")) {
+      const params = new URLSearchParams(hash.replace(/^#reset\??/, ""));
+      const token  = params.get("token");
+      if (token) {
+        setResetToken(token);
+        setTab("reset");
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -349,6 +504,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     onAuthSuccess(usuario);
     onClose();
   };
+
+  const handleCloseReset = () => {
+    // Limpiar el hash de la URL al cerrar el reset
+    history.replaceState(null, "", window.location.pathname);
+    setTab("login");
+    setResetToken(null);
+    onClose();
+  };
+
+  const TITLES = {
+    login:    { title: "Iniciá sesión",       sub: "Ingresá para guardar tus predicciones." },
+    register: { title: "Registrate",           sub: "Creá tu cuenta para participar en La Jugada Ganadora Chorotega." },
+    forgot:   { title: "Recuperar contraseña", sub: "Te enviamos un enlace a tu correo." },
+    reset:    { title: "Nueva contraseña",     sub: "Elegí una contraseña segura para tu cuenta." },
+  };
+  const { title, sub } = TITLES[tab] ?? TITLES.login;
 
   return (
     <div
@@ -372,7 +543,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           position: "relative",
           maxHeight: "92dvh",
           overflowY: "auto",
-          /* En desktop, lo mostramos como modal centrado */
           margin: "0 auto",
         }}
       >
@@ -396,52 +566,54 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             fontFamily: "'Boldonse', cursive", fontSize: "20px",
             color: "var(--ch-navy)", margin: "0 0 6px",
           }}>
-            {tab === "login" ? "Iniciá sesión" : "Registrate"}
+            {title}
           </h2>
           <p style={{ fontSize: "12px", color: "var(--ch-text-muted)", margin: 0, fontFamily: "'Inter', sans-serif" }}>
-            {tab === "login"
-              ? "Ingresá para guardar tus predicciones."
-              : "Creá tu cuenta para participar en La Jugada Ganadora Chorotega."}
+            {sub}
           </p>
         </div>
 
-        {/* Tabs */}
-        <div style={{
-          display: "flex", background: "#f0f3fa", borderRadius: "10px",
-          padding: "3px", marginBottom: "22px", gap: "3px",
-        }}>
-          {[["login", "Ingresar"], ["register", "Registrarse"]].map(([key, label]) => (
-            <button
-              key={key} type="button" onClick={() => setTab(key)}
-              style={{
-                flex: 1, padding: "8px", border: "none", borderRadius: "8px", cursor: "pointer",
-                fontSize: "12px", fontWeight: "700",
-                fontFamily: "'Barlow Condensed', sans-serif",
-                letterSpacing: "0.5px", textTransform: "uppercase",
-                background: tab === key ? "white" : "transparent",
-                color: tab === key ? "var(--ch-blue)" : "var(--ch-text-muted)",
-                boxShadow: tab === key ? "0 1px 4px rgba(0,30,80,0.12)" : "none",
-                transition: "all 0.15s",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs — solo visible en login/register */}
+        {(tab === "login" || tab === "register") && (
+          <div style={{
+            display: "flex", background: "#f0f3fa", borderRadius: "10px",
+            padding: "3px", marginBottom: "22px", gap: "3px",
+          }}>
+            {[["login", "Ingresar"], ["register", "Registrarse"]].map(([key, label]) => (
+              <button
+                key={key} type="button" onClick={() => setTab(key)}
+                style={{
+                  flex: 1, padding: "8px", border: "none", borderRadius: "8px", cursor: "pointer",
+                  fontSize: "12px", fontWeight: "700",
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  letterSpacing: "0.5px", textTransform: "uppercase",
+                  background: tab === key ? "white" : "transparent",
+                  color: tab === key ? "var(--ch-blue)" : "var(--ch-text-muted)",
+                  boxShadow: tab === key ? "0 1px 4px rgba(0,30,80,0.12)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Formulario activo */}
-        {tab === "login"
-          ? <LoginForm    onSuccess={handleSuccess} onSwitch={() => setTab("register")} />
-          : <RegisterForm onSuccess={handleSuccess} onSwitch={() => setTab("login")} />
-        }
+        {tab === "login"    && <LoginForm    onSuccess={handleSuccess} onSwitch={() => setTab("register")} onForgot={() => setTab("forgot")} />}
+        {tab === "register" && <RegisterForm onSuccess={handleSuccess} onSwitch={() => setTab("login")} />}
+        {tab === "forgot"   && <ForgotPasswordForm onBack={() => setTab("login")} />}
+        {tab === "reset"    && <ResetPasswordForm  token={resetToken}  onBack={handleCloseReset} />}
 
-        <p style={{
-          fontSize: "10px", color: "var(--ch-text-muted)",
-          textAlign: "center", marginTop: "16px", marginBottom: 0,
-          fontFamily: "'Inter', sans-serif", lineHeight: 1.5,
-        }}>
-          Al continuar, aceptás las condiciones del concurso de Cooperativa Chorotega.
-        </p>
+        {(tab === "login" || tab === "register") && (
+          <p style={{
+            fontSize: "10px", color: "var(--ch-text-muted)",
+            textAlign: "center", marginTop: "16px", marginBottom: 0,
+            fontFamily: "'Inter', sans-serif", lineHeight: 1.5,
+          }}>
+            Al continuar, aceptás las condiciones del concurso de Cooperativa Chorotega.
+          </p>
+        )}
       </div>
     </div>
   );

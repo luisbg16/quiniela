@@ -1,6 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { Resend } from "resend";
 import pool from "../config/database.js";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ─── Webservice de verificación de afiliados (Laravel/Chorotega) ─────────────
 //
@@ -139,6 +143,18 @@ export async function registrar(req, res) {
       return res.status(409).json({ error: "Ya existe una cuenta con ese correo electrónico" });
     }
 
+    // Verificar si el DNI ya está registrado
+    const dniLimpio = numeroAsociado?.trim() || null;
+    if (dniLimpio) {
+      const dniExistente = await pool.query(
+        "SELECT id FROM usuarios WHERE numero_asociado = $1",
+        [dniLimpio]
+      );
+      if (dniExistente.rows.length > 0) {
+        return res.status(409).json({ error: "Ya existe una cuenta registrada con ese DNI" });
+      }
+    }
+
     // Hashear contraseña
     const passwordHash = await bcrypt.hash(password, 12);
 
@@ -239,6 +255,129 @@ export async function obtenerPerfil(req, res) {
     return res.json({ usuario: sanitizarUsuario(resultado.rows[0]) });
   } catch (err) {
     console.error("Error al obtener perfil:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+// ─── Recuperar contraseña — paso 1: solicitar reset ──────────────────────────
+
+export async function olvideMiPassword(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email?.trim()) {
+      return res.status(400).json({ error: "El email es obligatorio" });
+    }
+
+    // Buscar usuario — respuesta genérica para no revelar si el email existe
+    const result = await pool.query(
+      "SELECT id, nombre FROM usuarios WHERE email =  AND activo = TRUE",
+      [email.toLowerCase().trim()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ mensaje: "Si el email está registrado, recibirás un enlace en breve" });
+    }
+
+    const usuario = result.rows[0];
+
+    // Invalidar tokens anteriores del usuario
+    await pool.query(
+      "UPDATE password_reset_tokens SET usado = TRUE WHERE usuario_id =  AND usado = FALSE",
+      [usuario.id]
+    );
+
+    // Generar token seguro de 32 bytes (64 chars hex)
+    const token    = crypto.randomBytes(32).toString("hex");
+    const expiraEn = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await pool.query(
+      "INSERT INTO password_reset_tokens (usuario_id, token, expira_en) VALUES (, , )",
+      [usuario.id, token, expiraEn]
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://lajugadaganadora.vercel.app";
+    const resetLink   = `${frontendUrl}/#reset?token=${token}`;
+
+    // Enviar email con Resend
+    await resend.emails.send({
+      from: "La Jugada Ganadora <noreply@chorotega.hn>",
+      to:   email.toLowerCase().trim(),
+      subject: "Recuperá tu contraseña — La Jugada Ganadora Chorotega",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+          <div style="background: #003080; padding: 24px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #f5c200; margin: 0; font-size: 22px;">La Jugada Ganadora</h1>
+            <p style="color: rgba(255,255,255,0.8); margin: 4px 0 0; font-size: 13px;">Cooperativa Chorotega</p>
+          </div>
+          <div style="background: #f9fafb; padding: 32px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+            <p style="color: #111827; font-size: 15px;">Hola <strong>${usuario.nombre}</strong>,</p>
+            <p style="color: #374151; font-size: 14px;">Recibimos una solicitud para recuperar la contraseña de tu cuenta.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${resetLink}"
+                 style="background: #003080; color: white; padding: 14px 32px; border-radius: 8px;
+                        text-decoration: none; font-weight: bold; font-size: 15px; display: inline-block;">
+                Recuperar contraseña
+              </a>
+            </div>
+            <p style="color: #6b7280; font-size: 12px;">Este enlace expira en <strong>1 hora</strong>. Si no solicitaste esto, podés ignorar este email.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return res.json({ mensaje: "Si el email está registrado, recibirás un enlace en breve" });
+  } catch (err) {
+    console.error("Error olvideMiPassword:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+// ─── Recuperar contraseña — paso 2: establecer nueva contraseña ───────────────
+
+export async function resetPassword(req, res) {
+  try {
+    const { token, nuevaPassword } = req.body;
+
+    if (!token || !nuevaPassword) {
+      return res.status(400).json({ error: "Token y nueva contraseña son obligatorios" });
+    }
+
+    if (nuevaPassword.length < 6) {
+      return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+    }
+
+    // Buscar token válido, no usado y no expirado
+    const result = await pool.query(
+      `SELECT prt.id, prt.usuario_id
+       FROM password_reset_tokens prt
+       WHERE prt.token = 
+         AND prt.usado = FALSE
+         AND prt.expira_en > NOW()`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "El enlace es inválido o ya expiró" });
+    }
+
+    const { id: tokenId, usuario_id } = result.rows[0];
+
+    // Actualizar contraseña
+    const passwordHash = await bcrypt.hash(nuevaPassword, 12);
+    await pool.query(
+      "UPDATE usuarios SET password_hash =  WHERE id = ",
+      [passwordHash, usuario_id]
+    );
+
+    // Invalidar token usado
+    await pool.query(
+      "UPDATE password_reset_tokens SET usado = TRUE WHERE id = ",
+      [tokenId]
+    );
+
+    return res.json({ mensaje: "Contraseña actualizada correctamente. Ya podés iniciar sesión." });
+  } catch (err) {
+    console.error("Error resetPassword:", err);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }

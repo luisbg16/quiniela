@@ -51,6 +51,13 @@ export default function App() {
     try { return !localStorage.getItem("ch_visited"); } catch { return true; }
   });
 
+  // Abrir modal automáticamente si la URL tiene #reset?token=xxxx
+  useEffect(() => {
+    if (window.location.hash.startsWith("#reset")) {
+      setShowAuthModal(true);
+    }
+  }, []);
+
   // ── Escuchar cambios de hash (botones atrás/adelante del navegador) ──────────
   const ignoreHashChange = useRef(false);
   useEffect(() => {
