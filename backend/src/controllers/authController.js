@@ -1,18 +1,29 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import pool from "../config/database.js";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+// Envío de email via Brevo HTTP API (no usa SMTP, funciona en Render)
+async function enviarEmail({ to, subject, html, nombre }) {
+  const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": process.env.BREVO_API_KEY,
+    },
+    body: JSON.stringify({
+      sender:   { name: "La Jugada Ganadora", email: process.env.BREVO_SENDER_EMAIL },
+      to:       [{ email: to, name: nombre || to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(`Brevo error: ${JSON.stringify(err)}`);
+  }
+  return resp.json();
+}
 
 // ─── Webservice de verificación de afiliados (Laravel/Chorotega) ─────────────
 //
@@ -306,10 +317,10 @@ export async function olvideMiPassword(req, res) {
     const frontendUrl = process.env.FRONTEND_URL || "https://quiniela-nu.vercel.app";
     const resetLink   = `${frontendUrl}/#reset?token=${token}`;
 
-    // Enviar email con Nodemailer + Gmail
-    await transporter.sendMail({
-      from: `"La Jugada Ganadora" <${process.env.GMAIL_USER}>`,
-      to:   email.toLowerCase().trim(),
+    // Enviar email con Brevo
+    await enviarEmail({
+      to:      email.toLowerCase().trim(),
+      nombre:  usuario.nombre,
       subject: "Recuperá tu contraseña — La Jugada Ganadora Chorotega",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
