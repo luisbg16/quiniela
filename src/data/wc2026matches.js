@@ -113,8 +113,8 @@ const MATCHDAY_3 = [
   // Jun 27
   m(49, "Grupo A", "Jun 27, 2026", "3:00 PM ET",  "México",        "🇲🇽",   "Chequia",   "🇨🇿",    "Estadio Akron, Zapopan"),
   m(50, "Grupo A", "Jun 27, 2026", "3:00 PM ET",  "Sudáfrica",     "🇿🇦",   "Corea del Sur", "🇰🇷",   "Rose Bowl, Los Ángeles"),
-  m(51, "Grupo B", "Jun 27, 2026", "6:00 PM ET",  "Suiza",         "🇨🇭",   "Qatar",         "🇶🇦",   "SoFi Stadium, Los Ángeles"),
-  m(52, "Grupo B", "Jun 27, 2026", "6:00 PM ET",  "Canadá",        "🇨🇦",   "Bosnia y Herzegovina",   "🇧🇦",    "BMO Field, Toronto"),
+  m(51, "Grupo B", "Jun 27, 2026", "6:00 PM ET",  "Canadá",        "🇨🇦",   "Suiza",         "🇨🇭",   "SoFi Stadium, Los Ángeles"),
+  m(52, "Grupo B", "Jun 27, 2026", "6:00 PM ET",  "Qatar",         "🇶🇦",   "Bosnia y Herzegovina",   "🇧🇦",    "BMO Field, Toronto"),
 
   // Jun 28
   m(53, "Grupo C", "Jun 28, 2026", "3:00 PM ET",  "Brasil",        "🇧🇷",   "Escocia",       "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "MetLife Stadium, Nueva Jersey"),
