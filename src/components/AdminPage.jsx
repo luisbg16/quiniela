@@ -451,18 +451,26 @@ const ADMIN_PAIRS = {
   },
 };
 
-// Tarjeta de partido admin con header de metadata
-function AdminMatchCard({ pair, valA, valB, onChangeA, onChangeB }) {
+// Tarjeta de partido admin con header de metadata + score + estado
+function AdminMatchCard({
+  pair, valA, valB, onChangeA, onChangeB,
+  scoreH, scoreA, onScoreHChange, onScoreAChange,
+  onSaveScore, savingScore, scoreSaved,
+  abierto, togglingEstado, onToggle,
+}) {
   const teamsA = teamsForLabel(pair.lA);
   const teamsB = teamsForLabel(pair.lB);
+  const showScore = onSaveScore != null; // solo si se pasaron props de score
   return (
     <div style={{
-      background: "white", border: "1px solid #dce7f7",
+      background: "white", border: `1px solid ${showScore && abierto === false ? "#ffcdd2" : "#dce7f7"}`,
       borderRadius: "10px", overflow: "hidden", marginBottom: "10px",
+      borderLeft: showScore ? `4px solid ${abierto === false ? "#ef9a9a" : "#a5d6a7"}` : undefined,
     }}>
       {/* Header */}
       <div style={{
-        background: "#eef2fa", borderBottom: "1px solid #dce7f7",
+        background: abierto === false ? "#fff3f3" : "#eef2fa",
+        borderBottom: "1px solid #dce7f7",
         padding: "6px 12px", display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <span style={{
@@ -470,11 +478,23 @@ function AdminMatchCard({ pair, valA, valB, onChangeA, onChangeB }) {
           textTransform: "uppercase", letterSpacing: "1.2px",
           fontFamily: "'Barlow Condensed', sans-serif",
         }}>{pair.mid}</span>
-        <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif" }}>
-          {pair.fecha} · {pair.estadio}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {showScore && (
+            <span style={{
+              fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "8px",
+              background: abierto === false ? "#ffebee" : "#e8f5e9",
+              color: abierto === false ? "#c62828" : "#2e7d32",
+            }}>
+              {abierto === false ? "🔒 Cerrado" : "🔓 Abierto"}
+            </span>
+          )}
+          <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif" }}>
+            {pair.fecha} · {pair.estadio}
+          </span>
+        </div>
       </div>
-      {/* Slots */}
+
+      {/* Slots de equipos */}
       <div style={{ padding: "10px 12px", display: "flex", alignItems: "flex-end", gap: "8px", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: "130px" }}>
           <div style={{ fontSize: "9px", color: "#8097c0", marginBottom: "3px", fontFamily: "'Inter', sans-serif" }}>{pair.lA}</div>
@@ -489,11 +509,47 @@ function AdminMatchCard({ pair, valA, valB, onChangeA, onChangeB }) {
           <TeamSelect value={valB} onChange={onChangeB} allTeams={teamsB} />
         </div>
       </div>
+
+      {/* Sección de resultado + estado (solo si se pasan props de score) */}
+      {showScore && (
+        <div style={{
+          borderTop: "1px dashed #e0e8f5", padding: "8px 12px",
+          display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap",
+          background: "#fafcff",
+        }}>
+          <span style={{ fontSize: "10px", color: "#8097c0", fontFamily: "'Inter', sans-serif", fontWeight: "600" }}>
+            Resultado:
+          </span>
+          <ScoreInput value={scoreH} onChange={onScoreHChange} disabled={savingScore} />
+          <span style={{ fontWeight: "900", color: "#8097c0", fontSize: "13px" }}>–</span>
+          <ScoreInput value={scoreA} onChange={onScoreAChange} disabled={savingScore} />
+          <button
+            type="button" onClick={onSaveScore} disabled={savingScore}
+            style={{ ...styles.saveBtn, padding: "4px 12px", fontSize: "11px" }}
+          >
+            {savingScore ? "..." : "Guardar"}
+          </button>
+          {scoreSaved && (
+            <span style={{ fontSize: "10px", color: "#2e7d32", fontWeight: "700",
+              background: "#e8f5e9", borderRadius: "4px", padding: "2px 6px" }}>✓ Guardado</span>
+          )}
+          <button
+            type="button" disabled={togglingEstado || savingScore}
+            onClick={() => onToggle(!abierto)}
+            style={{
+              ...styles.saveBtn, padding: "4px 10px", fontSize: "10px", marginLeft: "auto",
+              background: abierto === false ? "#2e7d32" : "#d32f2f", color: "white",
+            }}
+          >
+            {togglingEstado ? "…" : abierto === false ? "Abrir" : "Cerrar"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function SeccionBracketOficial({ bracketOficial, onSave }) {
+function SeccionBracketOficial({ bracketOficial, resultadosOficiales, onSave, onSaveResultado }) {
   const [datos, setDatos] = useState(() => ({
     L: { r32: Array(8).fill(null), r16: Array(4).fill(null), qf: Array(2).fill(null), sf: Array(1).fill(null), f: Array(1).fill(null) },
     R: { r32: Array(8).fill(null), r16: Array(4).fill(null), qf: Array(2).fill(null), sf: Array(1).fill(null), f: Array(1).fill(null) },
@@ -505,11 +561,72 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
   const [savedOk, setSavedOk] = useState(false);
   const [error, setError]     = useState("");
 
+  // ── Estado de resultados (scores) y config (abierto/cerrado) para eliminatorios ──
+  const [scores,         setScores]         = useState({});   // { [mid]: { h, a } }
+  const [savedScores,    setSavedScores]    = useState({});
+  const [loadingScore,   setLoadingScore]   = useState({});
+  const [config,         setConfig]         = useState({});   // { [mid]: bool }
+  const [togglingEstado, setTogglingEstado] = useState({});
+
   useEffect(() => {
     if (bracketOficial && Object.keys(bracketOficial).length > 0) {
       setDatos((prev) => ({ ...prev, ...bracketOficial }));
     }
   }, [bracketOficial]);
+
+  // Inicializar scores desde resultadosOficiales
+  useEffect(() => {
+    if (!resultadosOficiales) return;
+    const init = {};
+    const initSaved = {};
+    Object.entries(resultadosOficiales).forEach(([id, r]) => {
+      // Solo eliminatorios (M73–M104)
+      const num = parseInt(id.replace("M", ""), 10);
+      if (num >= 73 && num <= 104) {
+        init[id] = { h: r.goles_local, a: r.goles_vis };
+        initSaved[id] = true;
+      }
+    });
+    setScores(init);
+    setSavedScores(initSaved);
+  }, [resultadosOficiales]);
+
+  // Cargar config de partidos (abierto/cerrado)
+  useEffect(() => {
+    partidosConfigApi.obtener()
+      .then((d) => setConfig(d.config ?? {}))
+      .catch(() => {});
+  }, []);
+
+  const handleScoreChange = (mid, side, val) => {
+    setScores((prev) => ({ ...prev, [mid]: { ...prev[mid], [side]: val } }));
+    setSavedScores((prev) => ({ ...prev, [mid]: false }));
+  };
+
+  const handleSaveScore = async (mid, fase) => {
+    const { h, a } = scores[mid] ?? {};
+    if (h == null || a == null) { setError("Ingresá ambos goles antes de guardar"); return; }
+    setError("");
+    setLoadingScore((prev) => ({ ...prev, [mid]: true }));
+    try {
+      await adminApi.guardarResultado({ partidoId: mid, golesLocal: h, golesVis: a, fase });
+      setSavedScores((prev) => ({ ...prev, [mid]: true }));
+      // Auto-cerrar al guardar resultado
+      await partidosConfigApi.toggle({ partidoId: mid, abierto: false });
+      setConfig((prev) => ({ ...prev, [mid]: false }));
+      onSaveResultado && onSaveResultado();
+    } catch (e) { setError(e.message); }
+    finally { setLoadingScore((prev) => ({ ...prev, [mid]: false })); }
+  };
+
+  const handleToggle = async (mid, abierto) => {
+    setTogglingEstado((prev) => ({ ...prev, [mid]: true }));
+    try {
+      await partidosConfigApi.toggle({ partidoId: mid, abierto });
+      setConfig((prev) => ({ ...prev, [mid]: abierto }));
+    } catch (e) { setError(e.message); }
+    finally { setTogglingEstado((prev) => ({ ...prev, [mid]: false })); }
+  };
 
   const setSlot = (side, round, idx, val) => {
     setDatos((prev) => ({
@@ -532,6 +649,20 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
     }
   };
 
+  // Helper para pasar props de score/estado a AdminMatchCard
+  const scoreProps = (mid, fase) => ({
+    scoreH:        scores[mid]?.h ?? null,
+    scoreA:        scores[mid]?.a ?? null,
+    onScoreHChange: (v) => handleScoreChange(mid, "h", v),
+    onScoreAChange: (v) => handleScoreChange(mid, "a", v),
+    onSaveScore:   () => handleSaveScore(mid, fase),
+    savingScore:   !!loadingScore[mid],
+    scoreSaved:    !!savedScores[mid],
+    abierto:       config[mid] !== false,
+    togglingEstado: !!togglingEstado[mid],
+    onToggle:      (ab) => handleToggle(mid, ab),
+  });
+
   // Renderiza las tarjetas de pares para r32 / r16 / qf
   const renderPairs = (rKey) => {
     const { L, R, note, noteL, noteR } = ADMIN_PAIRS[rKey];
@@ -547,6 +678,7 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
               valB={datos.L?.[rKey]?.[pair.sB]}
               onChangeA={(v) => setSlot("L", rKey, pair.sA, v)}
               onChangeB={(v) => setSlot("L", rKey, pair.sB, v)}
+              {...scoreProps(pair.mid, rKey)}
             />
           ))}
           {noteL && <p style={{ fontSize: "10px", color: "#a8b8d8", marginTop: "6px" }}>{noteL}</p>}
@@ -561,6 +693,7 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
               valB={datos.R?.[rKey]?.[pair.sB]}
               onChangeA={(v) => setSlot("R", rKey, pair.sA, v)}
               onChangeB={(v) => setSlot("R", rKey, pair.sB, v)}
+              {...scoreProps(pair.mid, rKey)}
             />
           ))}
           {noteR && <p style={{ fontSize: "10px", color: "#a8b8d8", marginTop: "6px" }}>{noteR}</p>}
@@ -600,6 +733,7 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
             valA={datos.L?.sf?.[0]} valB={datos.R?.sf?.[0]}
             onChangeA={(v) => setSlot("L", "sf", 0, v)}
             onChangeB={(v) => setSlot("R", "sf", 0, v)}
+            {...scoreProps("M101", "sf")}
           />
         </div>
         <div>
@@ -609,6 +743,7 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
             valA={datos.L?.f?.[0]} valB={datos.R?.f?.[0]}
             onChangeA={(v) => setSlot("L", "f", 0, v)}
             onChangeB={(v) => setSlot("R", "f", 0, v)}
+            {...scoreProps("M102", "sf")}
           />
         </div>
       </div>
@@ -616,21 +751,14 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
 
     // 3er Puesto: M103 + tercero
     if (bracketTab === "tp") return (
-      <div style={{ maxWidth: "420px" }}>
-        <div style={styles.groupHeader}>Tercer Puesto — M103</div>
-        <div style={{
-          background: "white", border: "1px solid #dce7f7", borderRadius: "10px",
-          overflow: "hidden", marginBottom: "16px",
-        }}>
-          <div style={{ background: "#eef2fa", borderBottom: "1px solid #dce7f7", padding: "6px 12px", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "9px", fontWeight: "700", color: "#8097c0", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Barlow Condensed', sans-serif" }}>M103</span>
-            <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif" }}>Sáb 18 jul · Miami</span>
-          </div>
-          <div style={{ padding: "10px 12px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            {renderSlot("L", "sf", 0, "RU101 — Perdedor Semi 1")}
-            {renderSlot("R", "sf", 0, "RU102 — Perdedor Semi 2")}
-          </div>
-        </div>
+      <div style={{ maxWidth: "480px" }}>
+        <AdminMatchCard
+          pair={{ mid: "M103", lA: "RU101 — Perdedor Semi 1", lB: "RU102 — Perdedor Semi 2", fecha: "Sáb 18 jul", estadio: "Miami" }}
+          valA={datos.L?.sf?.[0]} valB={datos.R?.sf?.[0]}
+          onChangeA={(v) => setSlot("L", "sf", 0, v)}
+          onChangeB={(v) => setSlot("R", "sf", 0, v)}
+          {...scoreProps("M103", "tp")}
+        />
         <div style={{ marginTop: "8px" }}>
           <div style={{ fontSize: "10px", fontWeight: "700", color: "#005aba", textTransform: "uppercase", marginBottom: "6px" }}>Ganador — 3er Puesto</div>
           <TeamSelect value={datos.tercero} onChange={(v) => { setDatos((p) => ({ ...p, tercero: v })); setSavedOk(false); }} allTeams={ALL_TEAMS} />
@@ -640,21 +768,14 @@ function SeccionBracketOficial({ bracketOficial, onSave }) {
 
     // Gran Final: M104 + campeón
     if (bracketTab === "f") return (
-      <div style={{ maxWidth: "420px" }}>
-        <div style={styles.groupHeader}>Gran Final — M104</div>
-        <div style={{
-          background: "white", border: "1px solid #dce7f7", borderRadius: "10px",
-          overflow: "hidden", marginBottom: "16px",
-        }}>
-          <div style={{ background: "#eef2fa", borderBottom: "1px solid #dce7f7", padding: "6px 12px", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "9px", fontWeight: "700", color: "#8097c0", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Barlow Condensed', sans-serif" }}>M104</span>
-            <span style={{ fontSize: "9px", color: "#a8b8d8", fontFamily: "'Inter', sans-serif" }}>Dom 19 jul · Nueva York</span>
-          </div>
-          <div style={{ padding: "10px 12px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            {renderSlot("L", "f", 0, "W101 — Ganador Semi 1")}
-            {renderSlot("R", "f", 0, "W102 — Ganador Semi 2")}
-          </div>
-        </div>
+      <div style={{ maxWidth: "480px" }}>
+        <AdminMatchCard
+          pair={{ mid: "M104", lA: "W101 — Ganador Semi 1", lB: "W102 — Ganador Semi 2", fecha: "Dom 19 jul", estadio: "Nueva York" }}
+          valA={datos.L?.f?.[0]} valB={datos.R?.f?.[0]}
+          onChangeA={(v) => setSlot("L", "f", 0, v)}
+          onChangeB={(v) => setSlot("R", "f", 0, v)}
+          {...scoreProps("M104", "f")}
+        />
         <div style={{ marginTop: "8px" }}>
           <div style={{ fontSize: "10px", fontWeight: "700", color: "#f5c200", textTransform: "uppercase", marginBottom: "6px" }}>Campeón Mundial</div>
           <TeamSelect value={datos.campeon} onChange={(v) => { setDatos((p) => ({ ...p, campeon: v })); setSavedOk(false); }} allTeams={ALL_TEAMS} />
@@ -838,7 +959,6 @@ const TABS = [
 
 export default function AdminPage({ onBack }) {
   const [tab, setTab] = useState("resultados");
-  const [resultadosTab, setResultadosTab] = useState("grupos");
   const [resultadosOficiales, setResultadosOficiales] = useState({});
   const [bracketOficial, setBracketOficial] = useState({});
   const [calculando, setCalculando] = useState(false);
@@ -915,47 +1035,17 @@ export default function AdminPage({ onBack }) {
       {/* Contenido */}
       <div style={{ background: "white", borderRadius: "12px", padding: "24px", border: "1px solid var(--ch-border)", boxShadow: "0 2px 10px rgba(10,36,100,0.06)" }}>
         {tab === "resultados" && (
-          <>
-            {/* Sub-tabs: Grupos / Eliminatorios */}
-            <div style={{ display: "flex", gap: "2px", marginBottom: "20px", borderBottom: "2px solid #e8ecf5" }}>
-              {[{ key: "grupos", label: "Fase de Grupos" }, { key: "eliminatorios", label: "Fase Eliminatoria" }].map(({ key, label }) => (
-                <button
-                  key={key} type="button"
-                  onClick={() => setResultadosTab(key)}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    padding: "8px 16px",
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontWeight: "700", fontSize: "13px", letterSpacing: "0.3px",
-                    color: resultadosTab === key ? "#005aba" : "#8097c0",
-                    borderBottom: `3px solid ${resultadosTab === key ? "#005aba" : "transparent"}`,
-                    marginBottom: "-2px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {resultadosTab === "grupos" && (
-              <SeccionResultadosGrupos
-                resultadosOficiales={resultadosOficiales}
-                onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
-              />
-            )}
-            {resultadosTab === "eliminatorios" && (
-              <SeccionResultadosEliminatorios
-                resultadosOficiales={resultadosOficiales}
-                onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
-              />
-            )}
-          </>
+          <SeccionResultadosGrupos
+            resultadosOficiales={resultadosOficiales}
+            onSave={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
+          />
         )}
         {tab === "bracket" && (
           <SeccionBracketOficial
             bracketOficial={bracketOficial}
+            resultadosOficiales={resultadosOficiales}
             onSave={(d) => setBracketOficial(d)}
+            onSaveResultado={() => adminApi.obtenerResultados().then((d) => setResultadosOficiales(d.resultados ?? {})).catch(() => {})}
           />
         )}
         {tab === "usuarios"  && <SeccionUsuarios />}
