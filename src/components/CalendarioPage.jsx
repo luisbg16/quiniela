@@ -583,15 +583,20 @@ export default function CalendarioPage({
       .finally(() => setLoadingBracket(false));
   }, []);
 
-  // Cargar resultados oficiales y config de partidos cerrados
+  // Cargar resultados oficiales al montar
   useEffect(() => {
     adminApi.obtenerResultados()
       .then((d) => setOficialResultados(d.resultados ?? {}))
       .catch(() => {});
+  }, []);
+
+  // Cargar (y refrescar) config de partidos cerrados:
+  // Se ejecuta al montar Y cada vez que el usuario pasa a modo edición (readOnly → false)
+  useEffect(() => {
     partidosConfigApi.obtener()
       .then((d) => setPartidosConfigMap(d.config ?? {}))
       .catch(() => {});
-  }, []);
+  }, [readOnly]);
 
   const byGroup = useMemo(() => {
     const map = {};
