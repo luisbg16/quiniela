@@ -270,7 +270,7 @@ export async function olvideMiPassword(req, res) {
 
     // Buscar usuario — respuesta genérica para no revelar si el email existe
     const result = await pool.query(
-      "SELECT id, nombre FROM usuarios WHERE email =  AND activo = TRUE",
+      "SELECT id, nombre FROM usuarios WHERE email = $1 AND activo = TRUE",
       [email.toLowerCase().trim()]
     );
 
@@ -282,7 +282,7 @@ export async function olvideMiPassword(req, res) {
 
     // Invalidar tokens anteriores del usuario
     await pool.query(
-      "UPDATE password_reset_tokens SET usado = TRUE WHERE usuario_id =  AND usado = FALSE",
+      "UPDATE password_reset_tokens SET usado = TRUE WHERE usuario_id = $1 AND usado = FALSE",
       [usuario.id]
     );
 
@@ -291,7 +291,7 @@ export async function olvideMiPassword(req, res) {
     const expiraEn = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
     await pool.query(
-      "INSERT INTO password_reset_tokens (usuario_id, token, expira_en) VALUES (, , )",
+      "INSERT INTO password_reset_tokens (usuario_id, token, expira_en) VALUES ($1, $2, $3)",
       [usuario.id, token, expiraEn]
     );
 
@@ -350,7 +350,7 @@ export async function resetPassword(req, res) {
     const result = await pool.query(
       `SELECT prt.id, prt.usuario_id
        FROM password_reset_tokens prt
-       WHERE prt.token = 
+       WHERE prt.token = $1
          AND prt.usado = FALSE
          AND prt.expira_en > NOW()`,
       [token]
@@ -365,13 +365,13 @@ export async function resetPassword(req, res) {
     // Actualizar contraseña
     const passwordHash = await bcrypt.hash(nuevaPassword, 12);
     await pool.query(
-      "UPDATE usuarios SET password_hash =  WHERE id = ",
+      "UPDATE usuarios SET password_hash = $1 WHERE id = $2",
       [passwordHash, usuario_id]
     );
 
     // Invalidar token usado
     await pool.query(
-      "UPDATE password_reset_tokens SET usado = TRUE WHERE id = ",
+      "UPDATE password_reset_tokens SET usado = TRUE WHERE id = $1",
       [tokenId]
     );
 
