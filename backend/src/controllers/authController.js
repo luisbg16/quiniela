@@ -2,67 +2,62 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/database.js";
 
-// ─── Webservice de verificación de afiliados (Oracle ORDS) ───────────────────
+// ─── Webservice de verificación de afiliados (Laravel/Chorotega) ─────────────
 //
-// Variables de entorno requeridas:
-//   AFILIADOS_WS_URL  — URL base del endpoint ORDS
-//   CORE_USERNAME     — Usuario de autenticación ORDS
-//   CORE_PASSWORD     — Contraseña de autenticación ORDS
-//   CORE_APP_ID       — Application ID enviado como header
+// Variable de entorno requerida:
+//   AFILIADOS_WS_URL = https://afiliacion.chorotega.hn/validar-dni
 //
-// Autenticación: HTTP Basic Auth (usuario:contraseña en Base64)
-// El webservice debe responder con JSON que contenga al menos uno de:
-//   { esAfiliado: true }  |  { activo: true }  |  { afiliado: true }  |  { estado: "ACTIVO" }
+// El endpoint espera:  GET /validar-dni/{dni}   (formato: xxxx-xxxx-xxxxx)
+// Respuestas posibles:
+//   { status_code: 200, message: "Afiliado encontrado" }     → es afiliado
+//   { status_code: 404, message: "Afiliado no encontrado" }  → no es afiliado
+//   HTTP 5xx / error de red                                   → WS no disponible
 //
 // La función NUNCA bloquea el registro si el WS no está disponible o falla.
 //
+/**
+ * Convierte 13 dígitos puros → formato xxxx-xxxx-xxxxx requerido por el WS.
+ * Ejemplo: "0801199012345" → "0801-1990-12345"
+ * Si ya tiene guiones o no tiene exactamente 13 dígitos, lo deja como está.
+ */
+function formatearDni(dni) {
+  const digits = String(dni).replace(/\D/g, "");
+  if (digits.length === 13) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8)}`;
+  }
+  return dni; // formato inesperado — enviar tal cual
+}
+
 async function verificarAfiliado(numeroAsociado) {
   if (!numeroAsociado) return { esAfiliado: false, wsDisponible: false };
 
-  const wsUrl    = process.env.AFILIADOS_WS_URL;
-  const username = process.env.CORE_USERNAME;
-  const password = process.env.CORE_PASSWORD;
-  const appId    = process.env.CORE_APP_ID;
-
+  const wsUrl = process.env.AFILIADOS_WS_URL;
   if (!wsUrl) return { esAfiliado: false, wsDisponible: false };
 
+  const dniFormateado = formatearDni(numeroAsociado);
+
   try {
-    const headers = { "Content-Type": "application/json" };
-
-    // Basic Auth: Base64(usuario:contraseña)
-    if (username && password) {
-      const token = Buffer.from(`${username}:${password}`).toString("base64");
-      headers["Authorization"] = `Basic ${token}`;
-    }
-
-    // Application ID como header Oracle ORDS
-    if (appId) {
-      headers["Application-ID"] = appId;
-    }
-
     const resp = await fetch(
-      `${wsUrl}?dni=${encodeURIComponent(numeroAsociado)}`,
-      { headers, signal: AbortSignal.timeout(5000) }
+      `${wsUrl}/${encodeURIComponent(dniFormateado)}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(6000),
+      }
     );
 
+    // El endpoint siempre devuelve HTTP 200 aunque el afiliado no exista
     if (!resp.ok) return { esAfiliado: false, wsDisponible: true };
 
     const data = await resp.json();
 
-    // Soporta múltiples formatos de respuesta del webservice
-    const esAfiliado = !!(
-      data?.esAfiliado ||
-      data?.activo     ||
-      data?.afiliado   ||
-      data?.estado === "ACTIVO"
-    );
+    // status_code: 200 → afiliado encontrado y activo
+    // status_code: 404 → no encontrado
+    const esAfiliado = data?.status_code === 200;
 
-    // Extraer teléfono si el WS lo devuelve (campo telefono, celular, o phone)
-    const telefono = data?.telefono || data?.celular || data?.phone || null;
-
-    return { esAfiliado, wsDisponible: true, telefono };
+    return { esAfiliado, wsDisponible: true };
   } catch {
-    // Error de red o timeout — no bloquear el registro
+    // Error de red, timeout o WS caído — no bloquear el registro
     return { esAfiliado: false, wsDisponible: false };
   }
 }
