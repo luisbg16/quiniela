@@ -295,7 +295,7 @@ export async function olvideMiPassword(req, res) {
       [usuario.id, token, expiraEn]
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || "https://lajugadaganadora.vercel.app";
+    const frontendUrl = process.env.FRONTEND_URL || "https://quiniela-nu.vercel.app";
     const resetLink   = `${frontendUrl}/#reset?token=${token}`;
 
     // Enviar email con Resend
