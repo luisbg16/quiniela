@@ -89,11 +89,11 @@ function crearRateLimiter({ max, windowMs, mensaje }) {
   };
 }
 
-// Login: máx 10 intentos / 15 min por IP
+// Login: máx 20 intentos / 1 min por IP
 const loginRateLimiter = crearRateLimiter({
-  max:      10,
-  windowMs: 15 * 60 * 1000,
-  mensaje:  "Demasiados intentos de inicio de sesión. Esperá 15 minutos.",
+  max:      20,
+  windowMs: 1 * 60 * 1000,
+  mensaje:  "Demasiados intentos de inicio de sesión. Esperá 1 minuto.",
 });
 
 // Verificación de afiliado: máx 30 consultas / 15 min por IP
