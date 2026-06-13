@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ranking as rankingApi } from "../services/api.js";
 
 const MEDALLAS = ["🥇", "🥈", "🥉"];
 const PAGE_SIZE = 20;
 
-function PaginadorTabla({ page, totalPages, total, onPage }) {
+function PaginadorTabla({ page, total, onPage }) {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if (totalPages <= 1) return null;
   const nums = Array.from({ length: totalPages }, (_, i) => i + 1)
     .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
@@ -13,6 +14,9 @@ function PaginadorTabla({ page, totalPages, total, onPage }) {
     acc.push(p);
     return acc;
   }, []);
+
+
+  
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "16px", justifyContent: "center", flexWrap: "wrap" }}>
       <button type="button" onClick={() => onPage(page - 1)} disabled={page === 1}
@@ -34,29 +38,23 @@ function PaginadorTabla({ page, totalPages, total, onPage }) {
   );
 }
 
-export default function TablaPage({ isAdmin = false }) {
-  const [rows,       setRows]       = useState([]);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState("");
-  const [page,       setPage]       = useState(1);
+export default function TablaPage() {
+  const [data, setData]       = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
+  const [page, setPage]       = useState(1);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
-    rankingApi.obtener({ page, limit: PAGE_SIZE })
-      .then((r) => {
-        setRows(r.ranking ?? []);
-        setTotal(r.total ?? 0);
-        setTotalPages(r.totalPages ?? 1);
-      })
+    rankingApi.obtener()
+      .then((r) => setData(r.ranking ?? []))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [page]);
+  }, []);
 
-  // visibleRows viene ya paginado del backend
-  const visibleRows = rows;
+  const visibleRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return data.slice(start, start + PAGE_SIZE);
+  }, [data, page]);
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 24px" }}>
@@ -103,7 +101,7 @@ export default function TablaPage({ isAdmin = false }) {
 
       {/* Tabla */}
       {!loading && !error && (
-        total === 0 ? (
+        data.length === 0 ? (
           <div style={{
             textAlign: "center", padding: "56px 24px",
             background: "white", borderRadius: "12px",
@@ -124,7 +122,7 @@ export default function TablaPage({ isAdmin = false }) {
             {/* Cabecera tabla */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: isAdmin ? "56px 1fr 100px 90px 90px" : "56px 1fr 90px",
+              gridTemplateColumns: "56px 1fr 100px 90px 90px",
               background: "#003080", color: "white",
               padding: "12px 20px",
               fontFamily: "'Barlow Condensed', sans-serif",
@@ -133,8 +131,8 @@ export default function TablaPage({ isAdmin = false }) {
             }}>
               <span style={{ textAlign: "center" }}>#</span>
               <span>Participante</span>
-              {isAdmin && <span style={{ textAlign: "center" }}>N° Afiliado</span>}
-              {isAdmin && <span style={{ textAlign: "center" }}>Estado</span>}
+              <span style={{ textAlign: "center" }}>N° Afiliado</span>
+              <span style={{ textAlign: "center" }}>Estado</span>
               <span style={{ textAlign: "center" }}>Puntos</span>
             </div>
 
@@ -147,7 +145,7 @@ export default function TablaPage({ isAdmin = false }) {
                   key={idx}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isAdmin ? "56px 1fr 100px 90px 90px" : "56px 1fr 90px",
+                    gridTemplateColumns: "56px 1fr 100px 90px 90px",
                     padding: "13px 20px",
                     borderBottom: "1px solid #f0f3fa",
                     alignItems: "center",
@@ -178,38 +176,34 @@ export default function TablaPage({ isAdmin = false }) {
                     }}>
                       {row.nombre} {row.apellido}
                     </div>
-                    {isAdmin && row.fecha_actualizacion && (
+                    {row.fecha_actualizacion && (
                       <div style={{ fontSize: "10px", color: "#b0bec5", marginTop: "1px" }}>
                         Actualizado {new Date(row.fecha_actualizacion).toLocaleDateString("es-HN")}
                       </div>
                     )}
                   </div>
 
-                  {/* No. Asociado — solo admin */}
-                  {isAdmin && (
-                    <div style={{
-                      textAlign: "center",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "12px", color: "#5c7080",
-                    }}>
-                      {row.numero_asociado || "—"}
-                    </div>
-                  )}
+                  {/* No. Asociado */}
+                  <div style={{
+                    textAlign: "center",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "12px", color: "#5c7080",
+                  }}>
+                    {row.numero_asociado || "—"}
+                  </div>
 
-                  {/* Afiliado — solo admin */}
-                  {isAdmin && (
-                    <div style={{ textAlign: "center" }}>
-                      <span style={{
-                        display: "inline-block",
-                        padding: "2px 9px", borderRadius: "12px",
-                        fontSize: "10px", fontWeight: "700",
-                        background: row.es_afiliado ? "#e8f5e9" : "#f5f5f5",
-                        color: row.es_afiliado ? "#2e7d32" : "#9e9e9e",
-                      }}>
-                        {row.es_afiliado ? "Afiliado" : "No"}
-                      </span>
-                    </div>
-                  )}
+                  {/* Afiliado */}
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{
+                      display: "inline-block",
+                      padding: "2px 9px", borderRadius: "12px",
+                      fontSize: "10px", fontWeight: "700",
+                      background: row.es_afiliado ? "#e8f5e9" : "#f5f5f5",
+                      color: row.es_afiliado ? "#2e7d32" : "#9e9e9e",
+                    }}>
+                      {row.es_afiliado ? "Afiliado" : "No"}
+                    </span>
+                  </div>
 
                   {/* Puntos */}
                   <div style={{
@@ -228,8 +222,8 @@ export default function TablaPage({ isAdmin = false }) {
         )
       )}
 
-      {!loading && !error && totalPages > 1 && (
-        <PaginadorTabla page={page} totalPages={totalPages} total={total} onPage={setPage} />
+      {!loading && !error && data.length > PAGE_SIZE && (
+        <PaginadorTabla page={page} total={data.length} onPage={setPage} />
       )}
 
       <p style={{ fontSize: "11px", color: "#b0bec5", textAlign: "center", marginTop: "20px", fontFamily: "'Inter', sans-serif" }}>
