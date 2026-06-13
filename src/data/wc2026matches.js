@@ -34,22 +34,21 @@ const MATCHDAY_1 = [
   m(5,  "Grupo B", "Jun 13, 2026", "3:00 PM ET",  "Qatar",         "🇶🇦",   "Suiza",         "🇨🇭",   "Levi's Stadium, Santa Clara"),
   m(6,  "Grupo C", "Jun 13, 2026", "6:00 PM ET",  "Brasil",        "🇧🇷",   "Marruecos",     "🇲🇦",   "MetLife Stadium, Nueva Jersey"),
   m(7,  "Grupo C", "Jun 13, 2026", "9:00 PM ET",  "Haití",         "🇭🇹",   "Escocia",       "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Gillette Stadium, Boston"),
+  m(10, "Grupo D", "Jun 13, 2026", "11:00 PM ET",  "Australia",     "🇦🇺",   "Türkiye",   "🇹🇷",    "Lincoln Financial Field, Filadelfia"),
+
 
   // Jun 14
   m(8,  "Grupo E", "Jun 14, 2026", "3:00 PM ET",  "Alemania",      "🇩🇪",   "Curazao",       "🇨🇼",   "Arrowhead Stadium, Kansas City"),
   m(9,  "Grupo F", "Jun 14, 2026", "6:00 PM ET",  "Países Bajos",  "🇳🇱",   "Japón",         "🇯🇵",   "AT&T Stadium, Dallas"),
-  m(10, "Grupo D", "Jun 13, 2026", "11:00 PM ET",  "Australia",     "🇦🇺",   "Türkiye",   "🇹🇷",    "Lincoln Financial Field, Filadelfia"),
 
   // Jun 15
-  m(11, "Grupo G", "Jun 15, 2026", "3:00 PM ET",  "Irán",          "🇮🇷",   "Nueva Zelanda", "🇳🇿",   "Levi's Stadium, Santa Clara"),
-  m(12, "Grupo H", "Jun 15, 2026", "6:00 PM ET",  "España",        "🇪🇸",   "Cabo Verde",    "🇨🇻",   "Rose Bowl, Los Ángeles"),
-  m(13, "Grupo E", "Jun 15, 2026", "9:00 PM ET",  "Ecuador",       "🇪🇨",   "Costa de Marfil","🇨🇮",  "SoFi Stadium, Los Ángeles"),
-
-  // Jun 16
-  m(14, "Grupo F", "Jun 16, 2026", "12:00 PM ET", "Túnez",         "🇹🇳",   "Suecia",   "🇸🇪",    "Hard Rock Stadium, Miami"),
-  m(15, "Grupo G", "Jun 16, 2026", "3:00 PM ET",  "Bélgica",       "🇧🇪",   "Egipto",        "🇪🇬",   "NRG Stadium, Houston"),
+  m(11, "Grupo G", "Jun 15, 2026", "9:00 PM ET",  "Irán",          "🇮🇷",   "Nueva Zelanda", "🇳🇿",   "Levi's Stadium, Santa Clara"),
+  m(12, "Grupo H", "Jun 15, 2026", "12:00 PM ET",  "España",        "🇪🇸",   "Cabo Verde",    "🇨🇻",   "Rose Bowl, Los Ángeles"),
+  m(13, "Grupo E", "Jun 14, 2026", "9:00 PM ET",  "Ecuador",       "🇪🇨",   "Costa de Marfil","🇨🇮",  "SoFi Stadium, Los Ángeles"),  // Jun 16
+  m(14, "Grupo F", "Jun 14, 2026", "12:00 PM ET", "Túnez",         "🇹🇳",   "Suecia",   "🇸🇪",    "Hard Rock Stadium, Miami"),
+  m(15, "Grupo G", "Jun 15, 2026", "3:00 PM ET",  "Bélgica",       "🇧🇪",   "Egipto",        "🇪🇬",   "NRG Stadium, Houston"),
   m(16, "Grupo J", "Jun 16, 2026", "6:00 PM ET",  "Argentina",     "🇦🇷",   "Argelia",       "🇩🇿",   "MetLife Stadium, Nueva Jersey"),
-  m(17, "Grupo H", "Jun 16, 2026", "9:00 PM ET",  "Arabia Saudita","🇸🇦",   "Uruguay",       "🇺🇾",   "Arrowhead Stadium, Kansas City"),
+  m(17, "Grupo H", "Jun 15, 2026", "6:00 PM ET",  "Arabia Saudita","🇸🇦",   "Uruguay",       "🇺🇾",   "Arrowhead Stadium, Kansas City"),
 
   // Jun 17
   m(18, "Grupo I", "Jun 17, 2026", "12:00 PM ET", "Francia",       "🇫🇷",   "Senegal",       "🇸🇳",   "Lincoln Financial Field, Filadelfia"),
