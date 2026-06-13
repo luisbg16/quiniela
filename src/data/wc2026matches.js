@@ -38,7 +38,7 @@ const MATCHDAY_1 = [
   // Jun 14
   m(8,  "Grupo E", "Jun 14, 2026", "3:00 PM ET",  "Alemania",      "🇩🇪",   "Curazao",       "🇨🇼",   "Arrowhead Stadium, Kansas City"),
   m(9,  "Grupo F", "Jun 14, 2026", "6:00 PM ET",  "Países Bajos",  "🇳🇱",   "Japón",         "🇯🇵",   "AT&T Stadium, Dallas"),
-  m(10, "Grupo D", "Jun 14, 2026", "9:00 PM ET",  "Australia",     "🇦🇺",   "Türkiye",   "🇹🇷",    "Lincoln Financial Field, Filadelfia"),
+  m(10, "Grupo D", "Jun 13, 2026", "11:00 PM ET",  "Australia",     "🇦🇺",   "Türkiye",   "🇹🇷",    "Lincoln Financial Field, Filadelfia"),
 
   // Jun 15
   m(11, "Grupo G", "Jun 15, 2026", "3:00 PM ET",  "Irán",          "🇮🇷",   "Nueva Zelanda", "🇳🇿",   "Levi's Stadium, Santa Clara"),
