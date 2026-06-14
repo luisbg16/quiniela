@@ -207,7 +207,7 @@ export async function calcularTodosPuntos(req, res) {
 export async function obtenerRankingPublico(req, res) {
   try {
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
     // Total de participantes

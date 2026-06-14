@@ -228,7 +228,7 @@ export default function App() {
 
       {/* ——— TABLA DE POSICIONES ——— */}
       {activePage === "tabla" && (
-        <TablaPage isAdmin={!!currentUser?.esAdmin} />
+        <TablaPage isAdmin={!!currentUser?.esAdmin} currentUser={currentUser} />
       )}
 
       {/* ——— CONDICIONES ——— */}
