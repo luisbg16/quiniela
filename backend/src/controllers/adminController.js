@@ -222,8 +222,6 @@ export async function obtenerRankingPublico(req, res) {
          ROW_NUMBER() OVER (ORDER BY q.puntaje DESC, q.fecha_actualizacion ASC) AS posicion,
          u.nombre,
          u.apellido,
-         u.numero_asociado,
-         u.es_afiliado,
          q.puntaje,
          q.fecha_actualizacion
        FROM quinielas q

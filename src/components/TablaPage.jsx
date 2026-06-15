@@ -36,7 +36,11 @@ function PaginadorTabla({ page, total, onPage }) {
   );
 }
 
+<<<<<<< HEAD
 export default function TablaPage({ currentUser }) {
+=======
+export default function TablaPage({ currentUser, isAdmin }) {
+>>>>>>> b9616a3 (feat: tabla pública sin afiliado/DNI, búsqueda por nombre, mis puntos)
   const [data, setData]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
@@ -239,7 +243,7 @@ export default function TablaPage({ currentUser }) {
             {/* Cabecera tabla */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "56px 1fr 100px 90px 90px",
+              gridTemplateColumns: isAdmin ? "56px 1fr 100px 90px 90px" : "56px 1fr 90px",
               background: "#003080", color: "white",
               padding: "12px 20px",
               fontFamily: "'Barlow Condensed', sans-serif",
@@ -248,8 +252,8 @@ export default function TablaPage({ currentUser }) {
             }}>
               <span style={{ textAlign: "center" }}>#</span>
               <span>Participante</span>
-              <span style={{ textAlign: "center" }}>N° Afiliado</span>
-              <span style={{ textAlign: "center" }}>Estado</span>
+              {isAdmin && <span style={{ textAlign: "center" }}>N° Afiliado</span>}
+              {isAdmin && <span style={{ textAlign: "center" }}>Estado</span>}
               <span style={{ textAlign: "center" }}>Puntos</span>
             </div>
 
@@ -265,7 +269,7 @@ export default function TablaPage({ currentUser }) {
                   key={idx}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "56px 1fr 100px 90px 90px",
+                    gridTemplateColumns: isAdmin ? "56px 1fr 100px 90px 90px" : "56px 1fr 90px",
                     padding: "13px 20px",
                     borderBottom: "1px solid #f0f3fa",
                     alignItems: "center",
@@ -319,27 +323,31 @@ export default function TablaPage({ currentUser }) {
                     )}
                   </div>
 
-                  {/* No. Asociado */}
-                  <div style={{
-                    textAlign: "center",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "12px", color: "#5c7080",
-                  }}>
-                    {row.numero_asociado || "—"}
-                  </div>
-
-                  {/* Afiliado */}
-                  <div style={{ textAlign: "center" }}>
-                    <span style={{
-                      display: "inline-block",
-                      padding: "2px 9px", borderRadius: "12px",
-                      fontSize: "10px", fontWeight: "700",
-                      background: row.es_afiliado ? "#e8f5e9" : "#f5f5f5",
-                      color: row.es_afiliado ? "#2e7d32" : "#9e9e9e",
+                  {/* No. Asociado — solo admin */}
+                  {isAdmin && (
+                    <div style={{
+                      textAlign: "center",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "12px", color: "#5c7080",
                     }}>
-                      {row.es_afiliado ? "Afiliado" : "No"}
-                    </span>
-                  </div>
+                      {row.numero_asociado || "—"}
+                    </div>
+                  )}
+
+                  {/* Afiliado — solo admin */}
+                  {isAdmin && (
+                    <div style={{ textAlign: "center" }}>
+                      <span style={{
+                        display: "inline-block",
+                        padding: "2px 9px", borderRadius: "12px",
+                        fontSize: "10px", fontWeight: "700",
+                        background: row.es_afiliado ? "#e8f5e9" : "#f5f5f5",
+                        color: row.es_afiliado ? "#2e7d32" : "#9e9e9e",
+                      }}>
+                        {row.es_afiliado ? "Afiliado" : "No"}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Puntos */}
                   <div style={{
