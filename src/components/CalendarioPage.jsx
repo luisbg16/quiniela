@@ -114,7 +114,27 @@ function matchHasStarted(match) {
     if (!match.fecha || !match.hora) return false;
     // hora viene como "3:00 PM ET" → quitar sufijo ET
     const timeStr = match.hora.replace(/\s*ET\s*$/i, "").trim();
-    const dt = new Date(`${match.fecha} ${timeStr} EDT`);
+
+    // Casos de medianoche Honduras (22:00/23:00 HND = 12:00/1:00 AM ET del día
+    // siguiente): el campo "fecha" guarda el día calendario de HONDURAS, pero
+    // esa hora ET en realidad cae en el día calendario siguiente en ET. Si no
+    // se ajusta, el partido se marca como "iniciado" un día antes de tiempo.
+    const horaMatch = timeStr.match(/^(\d{1,2}):\d{2}\s*(AM|PM)$/i);
+    let fecha = match.fecha;
+    if (horaMatch) {
+      const h = parseInt(horaMatch[1], 10);
+      const period = horaMatch[2].toUpperCase();
+      const esMedianocheET = period === "AM" && (h === 12 || h === 1);
+      if (esMedianocheET) {
+        const d = new Date(`${match.fecha} 00:00:00`);
+        if (!isNaN(d.getTime())) {
+          d.setDate(d.getDate() + 1);
+          fecha = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+      }
+    }
+
+    const dt = new Date(`${fecha} ${timeStr} EDT`);
     if (isNaN(dt.getTime())) return false;
     return Date.now() >= dt.getTime();
   } catch {
