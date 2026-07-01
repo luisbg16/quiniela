@@ -220,6 +220,7 @@ export async function obtenerRankingPublico(req, res) {
     const rows = await pool.query(
       `SELECT
          ROW_NUMBER() OVER (ORDER BY q.puntaje DESC, q.fecha_actualizacion ASC) AS posicion,
+         u.id AS usuario_id,
          u.nombre,
          u.apellido,
          q.puntaje,

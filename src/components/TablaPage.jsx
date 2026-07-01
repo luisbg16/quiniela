@@ -36,11 +36,7 @@ function PaginadorTabla({ page, total, onPage }) {
   );
 }
 
-<<<<<<< HEAD
 export default function TablaPage({ currentUser }) {
-=======
-export default function TablaPage({ currentUser }) {
->>>>>>> b9616a3 (feat: tabla pública sin afiliado/DNI, búsqueda por nombre, mis puntos)
   const [data, setData]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
@@ -54,16 +50,10 @@ export default function TablaPage({ currentUser }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Encontrar al usuario logueado en el ranking
+  // Encontrar al usuario logueado en el ranking (por ID único, no por nombre)
   const misDatos = useMemo(() => {
     if (!currentUser || data.length === 0) return null;
-    const nom = (currentUser.nombre || "").toLowerCase().trim();
-    const ape = (currentUser.apellido || "").toLowerCase().trim();
-    return data.find(
-      (r) =>
-        (r.nombre || "").toLowerCase().trim() === nom &&
-        (r.apellido || "").toLowerCase().trim() === ape
-    ) || null;
+    return data.find((r) => r.usuario_id === currentUser.id) || null;
   }, [data, currentUser]);
 
   // Filtrar por búsqueda
@@ -259,9 +249,7 @@ export default function TablaPage({ currentUser }) {
             {visibleRows.map((row, idx) => {
               const pos = Number(row.posicion);
               const isTop3 = pos <= 3;
-              const isMe = currentUser &&
-                (row.nombre || "").toLowerCase().trim() === (currentUser.nombre || "").toLowerCase().trim() &&
-                (row.apellido || "").toLowerCase().trim() === (currentUser.apellido || "").toLowerCase().trim();
+              const isMe = currentUser && row.usuario_id === currentUser.id;
               return (
                 <div
                   key={idx}
